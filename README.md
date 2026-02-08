@@ -117,7 +117,7 @@ Il progetto segue le best practices **DevOps** con:
 | NFR2 | Scalabilità              | Il sistema deve supportare la crescita del numero di utenti e documenti                          | 1000+ utenti concorrenti    |
 | NFR3 | Containerizzazione       | Il sistema deve essere completamente containerizzato tramite Docker                              | 100% servizi containerizzati|
 | NFR4 | Deployment automatico    | Il sistema deve supportare il deployment automatico con rollback                                 | Deploy time < 10 min        |
-| NFR5 | Test automatici          | Il sistema deve avere copertura di test >80% (unit, integration, e2e)                            | Code coverage > 80%         |
+| NFR5 | Test automatici          | Il sistema deve avere copertura di test >65% (unit, integration, e2e)                            | Code coverage > 65%         |
 | NFR6 | Affidabilità             | Il sistema deve garantire l'integrità dei dati e la corretta gestione degli errori               | Uptime > 99%                |
 | NFR7 | Performance              | Le API devono rispondere in meno di 500ms per il 95° percentile                                  | p95 < 500ms                 |
 | NFR8 | Sicurezza                | Tutte le comunicazioni devono essere cifrate, password hashate con bcrypt                         | OWASP Top 10 compliant      |
