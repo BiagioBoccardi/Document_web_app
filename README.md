@@ -27,7 +27,7 @@ Il progetto segue le best practices **DevOps** con:
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                    FRONTEND (React)                          │
-│                   http://localhost:7000                      │
+│                   http://localhost:5173                      │
 └────────────────────────┬─────────────────────────────────────┘
                          │
                          ▼
