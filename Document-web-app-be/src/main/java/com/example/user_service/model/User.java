@@ -1,11 +1,13 @@
-package com.example.document.model;
+package com.example.user_service.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class UtenteModel {
+@Entity
+public class User {
+    @Id
     private int id;
     private String nome;
     private String cognome;
