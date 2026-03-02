@@ -1,2 +1,101 @@
+# ==========================================
+# 1. File di Sistema e IDE
+# ==========================================
+# MacOS / Windows
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+$RECYCLE.BIN/
+
+# IntelliJ IDEA / Eclipse / VS Code
+.idea/
+*.iml
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+*.swp
+
+# ==========================================
+# 2. Java & Hibernate (Backend Microservizi)
+# ==========================================
+# File compilati
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# Log (inclusi log generati da Hibernate)
+*.log
+logs/
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+dependency-reduced-pom.xml
+
+# Gradle
+.gradle/
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# ==========================================
+# 3. React & Node.js (Frontend)
+# ==========================================
+# Dipendenze
+node_modules/
+.pnp
+.pnp.js
+
+# Build di produzione
+/build
+/dist
+out/
+
+# Log di debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Cache vari
+.eslintcache
+.stylelintcache
+
+# ==========================================
+# 4. DevOps, CI/CD e Sicurezza
+# ==========================================
+# Variabili d'ambiente e Secrets (MAI committare)
 .env
-.class
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.cert
+secrets.yml
+
+# Report di test e Code Coverage (es. SonarQube, Jest, JaCoCo)
+coverage/
+.nyc_output/
+
+# File temporanei di container e infrastruttura
+.docker/
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# ==========================================
+# 5. File temporanei o di utility
+# ==========================================
+*.bak
+*.tmp
+*~

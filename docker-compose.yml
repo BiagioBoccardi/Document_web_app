@@ -6,7 +6,7 @@ services:
     image: postgres:15-alpine
     container_name: postgres_db
     environment:
-      POSTGRES_USER: user
+      POSTGRES_USER: user         # Bisogna creare un file .env dove inserire il vostro utente e la vostra password del db.
       POSTGRES_PASSWORD: password
       POSTGRES_DB: microservices_db
     ports:
