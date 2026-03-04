@@ -1,4 +1,4 @@
-package com.example.document.model;
+package com.example.document_service.model;
 import java.time.LocalDate;
 
 import lombok.Data;
@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class DocumentoModel {
+public class Document {
     private int id;
     private String titolo;
     private LocalDate dataModifica;
