@@ -1,6 +1,6 @@
-package com.example.searchservice.embedding;
+package com.example.search_service.embedding;
 
-import com.example.searchservice.config.DotenvConfig;
+import com.example.search_service.config.DotenvConfig;
 
 public class EmbeddingProviderFactory {
 
@@ -8,13 +8,14 @@ public class EmbeddingProviderFactory {
         String providerType = DotenvConfig.get("EMBEDDING_PROVIDER", "mock");
 
         switch (providerType.toLowerCase()) {
-            // case "openai":
-            //     return new OpenAIEmbeddingProvider();
-            // case "sentence-transformer":
-            //     return new SentenceTransformerProvider();
-            default:
+            default -> {
                 System.out.println("--- Provider di embedding non specificato o non valido, uso 'mock'. ---");
                 return new MockEmbeddingProvider();
+            }
         }
-    }
+        // case "openai":
+        //     return new OpenAIEmbeddingProvider();
+        // case "sentence-transformer":
+        //     return new SentenceTransformerProvider();
+            }
 }

@@ -1,7 +1,8 @@
-package com.example.searchservice.embedding;
+package com.example.search_service.embedding;
 
 import java.util.Collections;
 import java.util.List;
+
 
 public class MockEmbeddingProvider implements EmbeddingProvider {
     private static final int MOCK_DIMENSION = 384; // Dimensione comune per embedding

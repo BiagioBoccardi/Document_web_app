@@ -1,4 +1,4 @@
-package com.example.searchservice.config;
+package com.example.search_service.config;
 
 import io.github.cdimascio.dotenv.Dotenv;
 

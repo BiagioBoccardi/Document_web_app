@@ -1,15 +1,17 @@
-package com.example.searchservice;
+package com.example.search_service;
 
-import com.example.searchservice.config.DotenvConfig;
-import com.example.searchservice.config.QdrantClientFactory;
-import com.example.searchservice.embedding.EmbeddingProvider;
-import com.example.searchservice.embedding.EmbeddingProviderFactory;
+import java.util.concurrent.ExecutionException;
+
+import com.example.search_service.config.DotenvConfig;
+import com.example.search_service.config.QdrantClientFactory;
+import com.example.search_service.embedding.EmbeddingProvider;
+import com.example.search_service.embedding.EmbeddingProviderFactory;
+import com.example.search_service.auth.JwtAuthMiddleware; // Importazione del middleware
+
 import io.javalin.Javalin;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.grpc.Collections.Distance;
 import io.qdrant.client.grpc.Collections.VectorParams;
-
-import java.util.concurrent.ExecutionException;
 
 public class SearchService {
 
@@ -21,6 +23,7 @@ public class SearchService {
         QdrantClient qdrantClient = QdrantClientFactory.createClient();
         setupQdrantCollection(qdrantClient); // CONFIGURAZIONE COLLEZIONE QDRANT
 
+        // Istanza preparata per i prossimi endpoint (SS-BE-04 / SS-BE-05)
         EmbeddingProvider embeddingProvider = EmbeddingProviderFactory.createProvider();
 
         Javalin app = Javalin.create(config -> {
@@ -28,11 +31,21 @@ public class SearchService {
             config.showJavalinBanner = false;
         }).start(port);
 
+        // --- ATTIVAZIONE MIDDLEWARE JWT (SS-BE-03) ---
+        // Protegge tutte le rotte sotto /api/v1/ estraendo il userId dal token
+        app.before("/api/v1/*", JwtAuthMiddleware::handle);
+
         System.out.printf("--- Search Service avviato sulla porta: %d ---%n", port);
 
+        // Endpoint LIBERO (non protetto perché non inizia con /api/v1/)
         app.get("/health", ctx -> {
-            ctx.json("{\"status\": "UP"}");
-            // Aggiungeremo un controllo anche per Qdrant qui in futuro
+            ctx.json("{\"status\": \"UP\"}");
+        });
+
+        // Esempio di endpoint PROTETTO (richiederà il token)
+        app.get("/api/v1/test-auth", ctx -> {
+            String userId = ctx.attribute("userId");
+            ctx.result("Token valido! Benvenuto utente: " + userId);
         });
 
         // Gestione della chiusura delle risorse
@@ -52,14 +65,11 @@ public class SearchService {
         final int vectorSize = 384; // Dimensione tipica per modelli come all-MiniLM-L6-v2
 
         try {
-            // Controlliamo se la collezione esiste già
-            boolean collectionExists = client.getCollectionsList().get().getCollectionsList().stream()
-                    .anyMatch(collection -> collection.getName().equals(QDRANT_COLLECTION_NAME));
+            boolean collectionExists = client.listCollectionsAsync().get().contains(QDRANT_COLLECTION_NAME);
 
             if (!collectionExists) {
                 System.out.printf("La collezione '%s' non esiste. Creazione in corso...%n", QDRANT_COLLECTION_NAME);
 
-                // Creiamo la collezione specificando la dimensione dei vettori e la metrica di distanza
                 client.createCollectionAsync(QDRANT_COLLECTION_NAME,
                         VectorParams.newBuilder().setSize(vectorSize).setDistance(Distance.Cosine).build()
                 ).get();
@@ -73,7 +83,6 @@ public class SearchService {
             System.err.println("ERRORE: Impossibile configurare la collezione Qdrant. Il servizio non può partire.");
             System.err.println("Dettagli errore: " + e.getMessage());
             e.printStackTrace();
-            // Termina l'applicazione se Qdrant non è raggiungibile o configurabile.
             System.exit(1);
         }
     }
