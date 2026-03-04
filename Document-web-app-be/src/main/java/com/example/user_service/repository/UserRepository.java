@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 package com.example.user_service.repository;
 
 import java.util.Optional;
@@ -70,11 +69,3 @@ public class UserRepository {
         }
     }
 }
-=======
-package com.example.user_service.repository;
-
-
-public class UserRepository {
-    
-}
->>>>>>> f6285c2b857ee000d17288c2e1fdd1fe77991e43

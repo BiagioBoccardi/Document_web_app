@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 package com.example.user_service.service;
 
 import java.nio.charset.StandardCharsets;
@@ -110,11 +109,3 @@ public class UserService {
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
-=======
-package com.example.user_service.service;
-
-
-public class UserService {
-    
-}
->>>>>>> f6285c2b857ee000d17288c2e1fdd1fe77991e43
