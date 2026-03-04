@@ -10,7 +10,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.mindrot.jbcrypt.BCrypt;
 
-import com.example.user_service.model.UtenteModel;
+import com.example.user_service.model.User;
 import com.example.user_service.repository.UserRepository;
 
 public class UserService {
@@ -23,51 +23,51 @@ public class UserService {
         this.jwtSecret = jwtSecret;
     }
 
-    public UtenteModel register(String nome, String cognome, String email, String plainPassword) {
-        Optional<UtenteModel> existingUser = userRepository.findByEmail(email);
+    public User register(String nome, String cognome, String email, String plainPassword) {
+        Optional<User> existingUser = userRepository.findByEmail(email);
         if (existingUser.isPresent()) {
             throw new IllegalStateException("Email già registrata");
         }
 
-        UtenteModel utente = new UtenteModel();
-        utente.setNome(nome);
-        utente.setCognome(cognome);
-        utente.setEmail(email);
-        utente.setPassword(BCrypt.hashpw(plainPassword, BCrypt.gensalt()));
-        utente.setAdmin(false);
+        User user = new User();
+        user.setNome(nome);
+        user.setCognome(cognome);
+        user.setEmail(email);
+        user.setPassword(BCrypt.hashpw(plainPassword, BCrypt.gensalt()));
+        user.setAdmin(false);
 
-        return userRepository.save(utente);
+        return userRepository.save(user);
     }
 
     public String login(String email, String plainPassword) {
-        UtenteModel utente = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Credenziali non valide"));
 
-        if (!BCrypt.checkpw(plainPassword, utente.getPassword())) {
+        if (!BCrypt.checkpw(plainPassword, user.getPassword())) {
             throw new IllegalArgumentException("Credenziali non valide");
         }
 
-        return generateJwtToken(utente);
+        return generateJwtToken(user);
     }
 
-    public UtenteModel getProfile(int userId) {
+    public User getProfile(int userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Utente non trovato"));
+                .orElseThrow(() -> new IllegalArgumentException("User non trovato"));
     }
 
-    public UtenteModel getProfileByEmail(String email) {
+    public User getProfileByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Utente non trovato"));
+                .orElseThrow(() -> new IllegalArgumentException("User non trovato"));
     }
 
-    public UtenteModel updateProfile(int userId, String nome, String cognome) {
-        UtenteModel utente = getProfile(userId);
-        utente.setNome(nome);
-        utente.setCognome(cognome);
-        return userRepository.update(utente);
+    public User updateProfile(int userId, String nome, String cognome) {
+        User user = getProfile(userId);
+        user.setNome(nome);
+        user.setCognome(cognome);
+        return userRepository.update(user);
     }
 
-    private String generateJwtToken(UtenteModel utente) {
+    private String generateJwtToken(User utente) {
         String headerJson = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
 
         long iat = Instant.now().getEpochSecond();

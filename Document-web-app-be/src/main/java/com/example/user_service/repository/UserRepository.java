@@ -2,7 +2,7 @@ package com.example.user_service.repository;
 
 import java.util.Optional;
 
-import com.example.user_service.model.UtenteModel;
+import com.example.user_service.model.User;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -16,7 +16,7 @@ public class UserRepository {
         this.entityManagerFactory = entityManagerFactory;
     }
 
-    public UtenteModel save(UtenteModel utente) {
+    public User save(User utente) {
         try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
             try {
                 entityManager.getTransaction().begin();
@@ -32,11 +32,11 @@ public class UserRepository {
         }
     }
 
-    public Optional<UtenteModel> findByEmail(String email) {
+    public Optional<User> findByEmail(String email) {
         try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
             try {
-                UtenteModel result = entityManager
-                        .createQuery("SELECT u FROM UtenteModel u WHERE u.email = :email", UtenteModel.class)
+                User result = entityManager
+                        .createQuery("SELECT u FROM UtenteModel u WHERE u.email = :email", User.class)
                         .setParameter("email", email)
                         .getSingleResult();
                 return Optional.of(result);
@@ -46,18 +46,18 @@ public class UserRepository {
         }
     }
 
-    public Optional<UtenteModel> findById(int id) {
+    public Optional<User> findById(int id) {
         try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
-            UtenteModel result = entityManager.find(UtenteModel.class, id);
+            User result = entityManager.find(User.class, id);
             return Optional.ofNullable(result);
         }
     }
 
-    public UtenteModel update(UtenteModel utente) {
+    public User update(User utente) {
         try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
             try {
                 entityManager.getTransaction().begin();
-                UtenteModel merged = entityManager.merge(utente);
+                User merged = entityManager.merge(utente);
                 entityManager.getTransaction().commit();
                 return merged;
             } catch (RuntimeException ex) {
