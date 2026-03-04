@@ -1,5 +1,5 @@
 # FASE 1: Build (utilizziamo Maven per compilare il progetto)
-FROM maven:3.9-eclipse-temurin-17-alpine AS build
+FROM maven:3.9-eclipse-temurin-21-alpinejdk-alpine AS build
 
 # Definizione della cartella di lavoro
 WORKDIR /app
@@ -17,7 +17,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # FASE 2: Runtime (immagine finale leggera)
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-alpinejdk-alpine
 
 WORKDIR /app
 
