@@ -31,7 +31,7 @@ public class SearchService {
         System.out.printf("--- Search Service avviato sulla porta: %d ---%n", port);
 
         app.get("/health", ctx -> {
-            ctx.json("{\"status\": "UP"}")
+            ctx.json("{\"status\": \"UP\"}");
             // Aggiungeremo un controllo anche per Qdrant qui in futuro
         });
 
