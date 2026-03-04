@@ -12,11 +12,10 @@ function App() {
     <ContextProvider>
       <Routes>
         <Route path="/" element={<Layout/>}>
-          <Route index path="sign-up" element={<SignupForm/>}/>
-          <Route path="sign-in" element={<LoginForm/>}/>
-          <Route element={<Homepage/>}/>
+          <Route index path="sign-in" element={<LoginForm/>}/>
+          <Route path="sign-up" element={<SignupForm/>}/>
+          <Route path="homepage" element={<Homepage/>}/>
         </Route>
-        
       </Routes>
     </ContextProvider>
   )
