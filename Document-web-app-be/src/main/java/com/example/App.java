@@ -1,13 +1,9 @@
 package com.example;
 
-/**
- * Hello world!
- *
- */
-public class App 
-{
-    public static void main( String[] args )
-    {
-        System.out.println( "Hello World!" );
+import com.example.document_service.DocumentServiceApplication;
+
+public class App {
+    public static void main(String[] args) {
+        DocumentServiceApplication.start();
     }
 }

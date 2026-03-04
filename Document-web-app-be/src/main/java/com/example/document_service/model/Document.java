@@ -1,15 +1,25 @@
 package com.example.document_service.model;
-import java.time.LocalDate;
+import java.util.Date;
 
+import org.bson.BsonType;
+import org.bson.codecs.pojo.annotations.BsonId;
+import org.bson.codecs.pojo.annotations.BsonRepresentation;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class Document {
-    private int id;
-    private String titolo;
-    private LocalDate dataModifica;
-    private String tipologia;
-    private boolean stato; // true se il documento esiste, false se è stato eliminato
+    @BsonId
+    @BsonRepresentation(BsonType.OBJECT_ID)
+    private String id;
+    private long userId;
+    private String filename;
+    private String content;
+    private Date uploadDate;
+    private Date lastModified;
+    private DocumentMetadata metadata;
 }

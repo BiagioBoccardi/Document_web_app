@@ -78,6 +78,8 @@ pnpm-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
+!.env.example
+!**/.env.example
 *.pem
 *.key
 *.cert
@@ -86,6 +88,7 @@ secrets.yml
 # Report di test e Code Coverage (es. SonarQube, Jest, JaCoCo)
 coverage/
 .nyc_output/
+Document-web-app-be/src/main/java/com/example/document_service/next-steps-and-test-data.md
 
 # File temporanei di container e infrastruttura
 .docker/

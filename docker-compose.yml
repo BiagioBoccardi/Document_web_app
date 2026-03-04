@@ -67,6 +67,7 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASS: ${POSTGRES_PASSWORD}
 
+
   # Placeholder per il Frontend React
   # frontend:
   #   build: ./path-to-your-react-app
