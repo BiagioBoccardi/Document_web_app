@@ -19,13 +19,13 @@ public class UserController {
                 request.password()
         );
 
-        String token = userService.login(request.email(), request.password());
+        String token = userService.generateJwtToken(utente);
         return new AuthResponse(utente.getId(), utente.getEmail(), token);
     }
 
     public AuthResponse login(LoginRequest request) {
-        String token = userService.login(request.email(), request.password());
-        User utente = userService.getProfileByEmail(request.email());
+        User utente = userService.login(request.email(), request.password());
+        String token = userService.generateJwtToken(utente);
         return new AuthResponse(utente.getId(), utente.getEmail(), token);
     }
 

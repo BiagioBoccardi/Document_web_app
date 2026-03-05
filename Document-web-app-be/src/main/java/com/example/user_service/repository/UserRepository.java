@@ -36,7 +36,7 @@ public class UserRepository {
         try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
             try {
                 User result = entityManager
-                        .createQuery("SELECT u FROM UtenteModel u WHERE u.email = :email", User.class)
+                        .createQuery("SELECT u FROM User u WHERE u.email = :email", User.class)
                         .setParameter("email", email)
                         .getSingleResult();
                 return Optional.of(result);
