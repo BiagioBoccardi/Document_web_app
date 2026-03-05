@@ -1,6 +1,7 @@
 package com.example;
 
 import com.example.document_service.DocumentServiceApplication;
+import com.example.user_service.UserServiceApplication;
 
 public class App {
     public static void main(String[] args) {
@@ -28,7 +29,7 @@ public class App {
     private static void startUserService() {
         // Qui inizializzi Hibernate per Postgres e i relativi endpoint
         System.out.println("Inizializzazione User Service su Postgres...");
-        // UserInitializer.init(); 
+        UserServiceApplication.start();
     }
 
     private static void startNotificationService() {

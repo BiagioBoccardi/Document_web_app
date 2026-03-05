@@ -2,7 +2,7 @@
 FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 
 # Definizione della cartella di lavoro
-WORKDIR /app
+WORKDIR /Document-web-app-be
 
 # Copia solo il file delle dipendenze per sfruttare la cache di Docker
 COPY pom.xml .
@@ -19,7 +19,7 @@ RUN mvn clean package -DskipTests
 # FASE 2: Runtime (immagine finale leggera)
 FROM eclipse-temurin:21-jre-alpine
 
-WORKDIR /app
+WORKDIR /Document-web-app-be
 
 # Copia il file JAR generato dalla fase di build
 # Nota: assicurati che il nome del file JAR corrisponda a quello definito nel tuo pom.xml

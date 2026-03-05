@@ -1,0 +1,58 @@
+name: Java Backend CI Multi-Service
+
+on:
+  push:
+    branches: [ "main" ] # Si attiva quando fai push su questi rami
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # Job 1: Compilazione e Test del Backend
+  backend-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Scarica il codice dal repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Configura Java 21
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # 3. Compila e lancia i test
+      - name: Build JAR with Maven
+        working-directory: ./Document-web-app-be
+        run: mvn clean package -DskipTests # Rimuovi -DskipTests se hai unit test pronti
+
+      # 4. Creazione dell'immagine Docker (verifica che il Dockerfile funzioni)
+      - name: Build Backend Docker Image
+        working-directory: ./Document-web-app-be
+        run: docker build -t document-be:latest .
+
+  # Job 2: Build del Frontend
+  frontend-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '19'
+          cache: 'npm'
+          cache-dependency-path: './Document-web-app-fe/package-lock.json'
+
+      - name: Install and Build
+        working-directory: ./Document-web-app-fe
+        run: |
+          npm install
+          npm run build
+
+      - name: Build Frontend Docker Image
+        working-directory: ./Document-web-app-fe
+        run: docker build -t document-fe:latest .
