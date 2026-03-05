@@ -1,5 +1,5 @@
 # FASE 1: Build (utilizziamo Maven per compilare il progetto)
-FROM maven:3.9-eclipse-temurin-21-alpinejdk-alpine AS build
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 
 # Definizione della cartella di lavoro
 WORKDIR /app
@@ -17,13 +17,13 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # FASE 2: Runtime (immagine finale leggera)
-FROM eclipse-temurin:21-alpinejdk-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
 # Copia il file JAR generato dalla fase di build
 # Nota: assicurati che il nome del file JAR corrisponda a quello definito nel tuo pom.xml
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /Document-web-app-be/target/*.jar app.jar
 
 # Espone la porta su cui gira la tua applicazione (es. 8080)
 EXPOSE 8080

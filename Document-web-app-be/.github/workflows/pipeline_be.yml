@@ -1,0 +1,54 @@
+name: Java Backend CI (Javalin & Hibernate)
+
+on:
+  push:
+    branches: [ "main" ] # Si attiva quando fai push su questi rami
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    # Se Hibernate ha bisogno di un database per i test, lo definiamo qui
+    services:
+      postgres-db:
+        image: postgres:15
+        env:
+          POSTGRES_USER: user_test
+          POSTGRES_PASSWORD: password_test
+          POSTGRES_DB: db_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      # 1. Scarica il codice dal repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Configura Java 21
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # 3. Compila e lancia i test
+      # Hibernate userà il database definito sopra nei "services"
+      - name: Build and Test with Maven
+        run: mvn clean verify
+        env:
+          # Variabili d'ambiente che Hibernate leggerà per connettersi al DB di test
+          DB_URL: jdbc:postgresql://localhost:5432/document_web_app
+          DB_USER: user_test
+          DB_PASS: password_test
+
+      # 4. Creazione dell'immagine Docker (verifica che il Dockerfile funzioni)
+      - name: Build Docker Image
+        run: docker build -t backend-javalin:latest .
