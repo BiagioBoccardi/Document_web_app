@@ -21,7 +21,7 @@ public class UserServiceApplication {
 
     private static final int DEFAULT_PORT = 8080;
     private static final String DEFAULT_JWT_SECRET = "change-me-in-production";
-    private static final String PERSISTENCE_UNIT_NAME = "document_web_app_pu";
+    private static final String PERSISTENCE_UNIT_NAME = "user-service-pu";
 
     public static void main(String[] args) {
         start();
@@ -39,7 +39,7 @@ public class UserServiceApplication {
 
         Javalin app = Javalin.create(config -> {
             config.showJavalinBanner = false;
-            config.plugins.enableCors(cors -> cors.add(it -> it.anyHost())); 
+            config.plugins.enableCors(cors -> cors.add(it -> it.anyHost()));
         }).start(port);
 
         app.exception(IllegalArgumentException.class, (e, ctx) -> {
@@ -55,13 +55,12 @@ public class UserServiceApplication {
         });
 
         app.exception(Exception.class, (e, ctx) -> {
-            e.printStackTrace(); 
+            e.printStackTrace();
             ctx.status(HttpStatus.INTERNAL_SERVER_ERROR).json(Map.of("message", "Internal Server Error"));
         });
 
         app.get("/health", ctx -> ctx.json(Map.of("status", "UP", "service", "user-service")));
 
-        
         app.post("/api/v1/users/register", ctx -> {
             var request = ctx.bodyAsClass(UserController.RegisterRequest.class);
             ctx.status(HttpStatus.CREATED).json(userController.register(request));
