@@ -6,6 +6,19 @@ CREATE TABLE utente (
     isAdmin BOOLEAN NOT NULL DEFAULT FALSE
 );
 
+CREATE TABLE gruppo (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    owner_id INTEGER REFERENCES utente(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE membri_gruppo (   --Tabella di Associazione Utenti-Gruppi
+    group_id INTEGER REFERENCES gruppo(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES utente(id) ON DELETE CASCADE,
+    PRIMARY KEY (group_id, user_id)
+);
+
 CREATE TABLE documento (
     id SERIAL PRIMARY KEY,
     titolo VARCHAR(255) NOT NULL,
