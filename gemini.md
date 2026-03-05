@@ -50,9 +50,9 @@ Il focus esclusivo di questo progetto è lo sviluppo del **Microservizio 3 - Sea
 ### Backend (SS-BE)
 
 - [x] **SS-BE-01:** Configurazione base (Javalin port 83, env, client Qdrant, provider embedding). _(Alta)_
-- [ ] **SS-BE-02:** Setup Collezione Qdrant (startup init, schema, cosine distance). _(Alta)_
-- [ ] **SS-BE-03:** Middleware JWT per protezione endpoint `search`/`similar`. _(Alta)_
-- [ ] **SS-BE-04:** Astrazione provider embedding (Adapter pattern con fallback). _(Alta)_
+- [x] **SS-BE-02:** Setup Collezione Qdrant (startup init, schema, cosine distance). _(Alta)_
+- [x] **SS-BE-03:** Middleware JWT per protezione endpoint `search`/`similar`. _(Alta)_
+- [] **SS-BE-04:** Astrazione provider embedding (Adapter pattern con fallback). _(Alta)_
 - [ ] **SS-BE-05:** Endpoint `POST /api/v1/embeddings`. _(Alta)_
 - [ ] **SS-BE-09:** Consumer `document.uploaded` (indicizzazione automatica). _(Alta)_
 - [ ] **SS-BE-06:** Endpoint `POST /api/v1/search` (embedding query, ricerca, ranking). _(Alta)_

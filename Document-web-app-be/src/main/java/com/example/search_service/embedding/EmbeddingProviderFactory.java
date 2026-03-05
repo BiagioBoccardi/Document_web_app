@@ -1,6 +1,6 @@
-package com.example.searchservice.embedding;
+package com.example.search_service.embedding;
 
-import com.example.searchservice.config.DotenvConfig;
+import com.example.search_service.config.DotenvConfig;
 
 public class EmbeddingProviderFactory {
 

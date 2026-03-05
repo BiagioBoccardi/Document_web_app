@@ -1,11 +1,11 @@
-package com.example.searchservice.config;
+package com.example.search_service.config;
 
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.QdrantGrpcClient;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration; // <-- Import corretto
 
 public class QdrantClientFactory {
 
@@ -19,7 +19,7 @@ public class QdrantClientFactory {
 
         return new QdrantClient(
                 QdrantGrpcClient.newBuilder(channel)
-                        .withTimeout(5, TimeUnit.SECONDS)
+                        .withTimeout(Duration.ofSeconds(5)) // <-- Metodo aggiornato
                         .build());
     }
 
