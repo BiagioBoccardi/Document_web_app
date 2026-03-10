@@ -61,3 +61,15 @@ CREATE TABLE documento_modifiche (  -- Per tenere traccia delle modifiche ai doc
     CONSTRAINT fk_utente FOREIGN KEY (utente_id) REFERENCES utente(id) ON DELETE CASCADE,
     CONSTRAINT chk_tipo_modifica CHECK (tipo_modifica IN ('creazione', 'modifica', 'eliminazione'))
 );
+
+CREATE TABLE notifiche (
+    uuid UUID PRIMARY KEY,
+    messaggio TEXT NOT NULL,
+    user_id INT NOT NULL,
+    stato VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at TIMESTAMP
+);
+-- Indici per performance
+CREATE INDEX idx_notifiche_user_id ON notifiche(user_id);
+CREATE INDEX idx_notifiche_stato ON notifiche(stato);
