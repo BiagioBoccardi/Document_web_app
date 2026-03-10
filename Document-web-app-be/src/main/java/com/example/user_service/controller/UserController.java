@@ -1,6 +1,6 @@
 package com.example.user_service.controller;
 
-import com.example.user_service.model.User;
+import com.example.user_service.models.User;
 import com.example.user_service.service.UserService;
 
 public class UserController {
@@ -29,7 +29,7 @@ public class UserController {
         return new AuthResponse(utente.getId(), utente.getEmail(), token);
     }
 
-    public ProfileResponse getProfile(int userId) {
+    public ProfileResponse getProfile(long userId) {
         User utente = userService.getProfile(userId);
         return new ProfileResponse(
                 utente.getId(),
@@ -40,7 +40,7 @@ public class UserController {
         );
     }
 
-    public ProfileResponse updateProfile(int userId, UpdateProfileRequest request) {
+    public ProfileResponse updateProfile(long userId, UpdateProfileRequest request) {
         User utente = userService.updateProfile(userId, request.nome(), request.cognome());
         return new ProfileResponse(
                 utente.getId(),

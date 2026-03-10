@@ -2,11 +2,11 @@ package com.example.search_service;
 
 import java.util.concurrent.ExecutionException;
 
+import com.example.search_service.auth.JwtAuthMiddleware;
 import com.example.search_service.config.DotenvConfig;
 import com.example.search_service.config.QdrantClientFactory;
 import com.example.search_service.embedding.EmbeddingProvider;
-import com.example.search_service.embedding.EmbeddingProviderFactory;
-import com.example.search_service.auth.JwtAuthMiddleware; // Importazione del middleware
+import com.example.search_service.embedding.EmbeddingProviderFactory; // Importazione del middleware
 
 import io.javalin.Javalin;
 import io.qdrant.client.QdrantClient;
@@ -40,16 +40,13 @@ public class SearchService {
         // Endpoint LIBERO (non protetto perché non inizia con /api/v1/)
         app.get("/health", ctx -> {
             ctx.json("{\"status\": \"UP\"}");
-<<<<<<< HEAD:Document-web-app-be/src/main/java/com/example/search_service/SearchService.java
+            // Aggiungeremo un controllo anche per Qdrant qui in futuro
         });
 
         // Esempio di endpoint PROTETTO (richiederà il token)
         app.get("/api/v1/test-auth", ctx -> {
             String userId = ctx.attribute("userId");
             ctx.result("Token valido! Benvenuto utente: " + userId);
-=======
-            // Aggiungeremo un controllo anche per Qdrant qui in futuro
->>>>>>> 62aec7bb7160257444e45407dda1b42d2bc8a170:Document-web-app-be/src/main/java/com/example/searchservice/SearchService.java
         });
 
         // Gestione della chiusura delle risorse

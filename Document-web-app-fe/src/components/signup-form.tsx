@@ -1,27 +1,47 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { useContextCast } from "@/context/context"
-import { useState } from "react"
-import { useNavigate } from "react-router"
-import z from "zod"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { useContextCast } from "@/context/context";
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import z from "zod";
 
+const createUserFormSchema = z
+  .object({
+    nome: z.string().min(2, "Il nome è obbligatorio"),
+    email: z.string().email("Email non valida"),
+    password: z
+      .string()
+      .min(8, "La password deve essere lunga almeno 8 caratteri")
+      .regex(/[a-zA-Z]/, "La password deve contenere almeno una lettera")
+      .regex(/\d/, "La password deve contenere almeno un numero"),
+    confirmPassword: z
+      .string()
+      .min(8, "La password di conferma deve essere lunga almeno 8 caratteri"),
+    isAdmin: z.boolean(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Le password non coincidono",
+    path: ["confirmPassword"],
+  });
 
-const createUserFormSchema = z.object({
-  nome: z.string().min(2, "Il nome è obbligatorio"),
-  email: z.string().email("Email non valida"),
-  password: z.string().min(8, "La password deve essere lunga almeno 8 caratteri")
-    .regex(/[a-zA-Z]/, "La password deve contenere almeno una lettera")
-    .regex(/\d/, "La password deve contenere almeno un numero"),
-  confirmPassword: z.string().min(8, "La password di conferma deve essere lunga almeno 8 caratteri"),
-  isAdmin: z.boolean()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Le password non coincidono",
-  path: ["confirmPassword"],
-});
-
-export function SignupForm() {
+export function SignupForm({
+  onSwitchToLogin,
+}: {
+  onSwitchToLogin?: () => void;
+}) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
@@ -37,14 +57,14 @@ export function SignupForm() {
       email: formData.get("email") as string,
       password: formData.get("password") as string,
       confirmPassword: formData.get("confirmPassword") as string,
-      isAdmin
+      isAdmin,
     };
 
     const parsed = createUserFormSchema.safeParse(data);
 
     if (!parsed.success) {
       const fieldErrors: Record<string, string> = {};
-      parsed.error.issues.forEach(issue => {
+      parsed.error.issues.forEach((issue) => {
         fieldErrors[issue.path[0] as string] = issue.message;
       });
       setErrors(fieldErrors);
@@ -57,19 +77,19 @@ export function SignupForm() {
       nome: parsed.data.nome,
       email: parsed.data.email,
       password: parsed.data.password,
-      isAdmin: parsed.data.isAdmin
+      isAdmin: parsed.data.isAdmin,
     };
 
     await createUser(payload);
     form.reset();
     setIsAdmin(false);
     navigate("/");
-  }
+  };
 
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
-        <Card >
+        <Card>
           <CardHeader>
             <CardTitle>Crea un'account</CardTitle>
             <CardDescription>
@@ -81,17 +101,21 @@ export function SignupForm() {
               <FieldGroup>
                 <Field className="grid gap-1.5">
                   <FieldLabel htmlFor="nome">Nome</FieldLabel>
-                  <Input 
-                    id="nome" 
-                    type="text" 
-                    placeholder="John Doe" 
-                    aria-invalid={!!errors.nome} 
+                  <Input
+                    name="nome"
+                    id="nome"
+                    type="text"
+                    placeholder="John Doe"
+                    aria-invalid={!!errors.nome}
                   />
-                  {errors.nome && <p className="text-red-500 text-sm">{errors.nome}</p>}
+                  {errors.nome && (
+                    <p className="text-red-500 text-sm">{errors.nome}</p>
+                  )}
                 </Field>
                 <Field className="grid gap-1.5">
                   <FieldLabel htmlFor="email">Email</FieldLabel>
                   <Input
+                    name="email"
                     id="email"
                     type="email"
                     placeholder="m@example.com"
@@ -100,29 +124,55 @@ export function SignupForm() {
                   <FieldDescription>
                     L'indirizzo email deve essere valido.
                   </FieldDescription>
-                  {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+                  {errors.email && (
+                    <p className="text-red-500 text-sm">{errors.email}</p>
+                  )}
                 </Field>
                 <Field className="grid gap-1.5">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <Input id="password" type="password" aria-invalid={!!errors.password} />
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    aria-invalid={!!errors.password}
+                  />
                   <FieldDescription>
-                    Deve essere lunga almeno 8 caratteri e contenere almeno un numero e una lettera.
+                    Deve essere lunga almeno 8 caratteri e contenere almeno un
+                    numero e una lettera.
                   </FieldDescription>
-                  {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
+                  {errors.password && (
+                    <p className="text-red-500 text-sm">{errors.password}</p>
+                  )}
                 </Field>
                 <Field className="grid gap-1.5">
-                  <FieldLabel htmlFor="confirm-password">
+                  <FieldLabel htmlFor="confirmPassword">
                     Conferma Password
                   </FieldLabel>
-                  <Input id="confirm-password" type="password" aria-invalid={!!errors.confirmPassword} />
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    aria-invalid={!!errors.confirmPassword}
+                  />
                   <FieldDescription>Conferma la tua password.</FieldDescription>
-                  {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
+                  {errors.confirmPassword && (
+                    <p className="text-red-500 text-sm">
+                      {errors.confirmPassword}
+                    </p>
+                  )}
                 </Field>
                 <FieldGroup>
                   <Field>
                     <Button type="submit">Crea Account</Button>
                     <FieldDescription className="px-6 text-center">
-                      hai già un'account? <a href="/sign-in">Accedi</a>
+                      hai già un'account?{" "}
+                      <Button
+                        variant="link"
+                        type="button"
+                        onClick={onSwitchToLogin}
+                      >
+                        Accedi
+                      </Button>
                     </FieldDescription>
                   </Field>
                 </FieldGroup>
@@ -132,5 +182,5 @@ export function SignupForm() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

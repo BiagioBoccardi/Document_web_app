@@ -8,8 +8,8 @@ public class EmbeddingProviderFactory {
         String providerType = DotenvConfig.get("EMBEDDING_PROVIDER", "mock");
 
         switch (providerType.toLowerCase()) {
-            // case "openai":
-            //     return new OpenAIEmbeddingProvider();
+            case "openai":
+                return new OpenAiEmbeddingProvider();
             // case "sentence-transformer":
             //     return new SentenceTransformerProvider();
             default:

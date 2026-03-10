@@ -1,6 +1,8 @@
 package com.example;
 
 import com.example.document_service.DocumentServiceApplication;
+import com.example.user_service.UserInitializer;
+import io.javalin.Javalin;
 
 public class App {
     public static void main(String[] args) {
@@ -26,9 +28,15 @@ public class App {
     }
 
     private static void startUserService() {
+        Javalin app = Javalin.create(config -> {
+            config.plugins.enableCors(cors -> {
+                cors.add(it -> it.anyHost());
+            });
+        }).start(81);
+        
         // Qui inizializzi Hibernate per Postgres e i relativi endpoint
         System.out.println("Inizializzazione User Service su Postgres...");
-        // UserInitializer.init(); 
+        UserInitializer.init(app); 
     }
 
     private static void startNotificationService() {
