@@ -134,7 +134,6 @@ CREATE TABLE notifica (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     message TEXT NOT NULL,
-    type VARCHAR(20) NOT NULL, -- 'IN_APP'
     status VARCHAR(20) NOT NULL, -- 'PENDING', 'SENT', 'FAILED'
     sent_at TIMESTAMP,
     read_at TIMESTAMP,

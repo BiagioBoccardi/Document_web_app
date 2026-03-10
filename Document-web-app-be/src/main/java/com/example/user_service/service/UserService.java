@@ -1,5 +1,6 @@
 package com.example.user_service.service;
 
+<<<<<<< HEAD
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.example.user_service.models.User;
 import com.example.user_service.persistence.UserDao;
@@ -7,10 +8,23 @@ import com.example.user_service.persistence.UserDao;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+=======
+>>>>>>> a31fb12f1dc53f77edc7c168491f544774be7500
 import java.time.Instant;
-import java.util.Base64;
+import java.util.Date;
 import java.util.Optional;
 
+<<<<<<< HEAD
+=======
+import org.mindrot.jbcrypt.BCrypt;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTCreationException;
+import com.example.user_service.model.User;
+import com.example.user_service.repository.UserRepository;
+
+>>>>>>> a31fb12f1dc53f77edc7c168491f544774be7500
 public class UserService {
 
     private final UserDao userDao;
@@ -21,32 +35,49 @@ public class UserService {
         this.jwtSecret = jwtSecret;
     }
 
+<<<<<<< HEAD
     public User register(String nome, String cognome, String email, String plainPassword) {
         Optional<User> existingUser = userDao.findByEmail(email);
+=======
+    public User register(String nome, String email, String plainPassword, boolean isAdmin) {
+        Optional<User> existingUser = userRepository.findByEmail(email);
+>>>>>>> a31fb12f1dc53f77edc7c168491f544774be7500
         if (existingUser.isPresent()) {
             throw new IllegalStateException("Email già registrata");
         }
 
         User user = new User();
         user.setNome(nome);
-        user.setCognome(cognome);
         user.setEmail(email);
+<<<<<<< HEAD
         user.setPassword(BCrypt.withDefaults().hashToString(12, plainPassword.toCharArray()));
         user.setAdmin(false);
+=======
+        user.setAdmin(isAdmin);
+        user.setPasswordHash(BCrypt.hashpw(plainPassword, BCrypt.gensalt(12)));
+>>>>>>> a31fb12f1dc53f77edc7c168491f544774be7500
 
         return userDao.save(user);
     }
 
+<<<<<<< HEAD
     public String login(String email, String plainPassword) {
         User user = userDao.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Credenziali non valide"));
 
         BCrypt.Result result = BCrypt.verifyer().verify(plainPassword.toCharArray(), user.getPassword());
         if (!result.verified) {
+=======
+    public User login(String email, String plainPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Credenziali non valide"));
+
+        if (!BCrypt.checkpw(plainPassword, user.getPasswordHash())) {
+>>>>>>> a31fb12f1dc53f77edc7c168491f544774be7500
             throw new IllegalArgumentException("Credenziali non valide");
         }
 
-        return generateJwtToken(user);
+        return user;
     }
 
     public User getProfile(long userId) {
@@ -59,53 +90,33 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User non trovato"));
     }
 
+<<<<<<< HEAD
     public User updateProfile(long userId, String nome, String cognome) {
         User user = getProfile(userId);
         user.setNome(nome);
         user.setCognome(cognome);
         userDao.update(user);
         return user;
+=======
+    public User updateProfile(int userId, String nome) {
+        User user = getProfile(userId);
+        user.setNome(nome);
+        return userRepository.update(user);
+>>>>>>> a31fb12f1dc53f77edc7c168491f544774be7500
     }
 
-    private String generateJwtToken(User utente) {
-        String headerJson = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
-
-        long iat = Instant.now().getEpochSecond();
-        long exp = iat + 3600;
-        String payloadJson = String.format(
-                "{\"sub\":\"%d\",\"email\":\"%s\",\"admin\":%s,\"iat\":%d,\"exp\":%d}",
-                utente.getId(),
-                escapeJson(utente.getEmail()),
-                utente.isAdmin(),
-                iat,
-                exp
-        );
-
-        String header = base64UrlEncode(headerJson.getBytes(StandardCharsets.UTF_8));
-        String payload = base64UrlEncode(payloadJson.getBytes(StandardCharsets.UTF_8));
-        String unsignedToken = header + "." + payload;
-        String signature = sign(unsignedToken, jwtSecret);
-
-        return unsignedToken + "." + signature;
-    }
-
-    private String sign(String data, String secret) {
+    public String generateJwtToken(User utente) {
         try {
-            Mac hmac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec keySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            hmac.init(keySpec);
-            byte[] signature = hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-            return base64UrlEncode(signature);
-        } catch (java.security.GeneralSecurityException ex) {
-            throw new IllegalStateException("Errore nella generazione del JWT", ex);
+            Algorithm algorithm = Algorithm.HMAC256(jwtSecret);
+            return JWT.create()
+                    .withSubject(String.valueOf(utente.getId()))
+                    .withClaim("email", utente.getEmail())
+                    .withClaim("role", utente.isAdmin() ? "ADMIN" : "USER")
+                    .withIssuedAt(Date.from(Instant.now()))
+                    .withExpiresAt(Date.from(Instant.now().plusSeconds(3600)))
+                    .sign(algorithm);
+        } catch (JWTCreationException ex) {
+            throw new IllegalStateException("Errore nella generazione del token JWT", ex);
         }
-    }
-
-    private String base64UrlEncode(byte[] value) {
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(value);
-    }
-
-    private String escapeJson(String value) {
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

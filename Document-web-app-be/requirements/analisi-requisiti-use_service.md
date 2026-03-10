@@ -45,8 +45,8 @@ Questo documento dettaglia i task funzionali da implementare **solo per il micro
 | US-BE-01 | FR2, FR8, FR9 | Bootstrap servizio | Configurare microservizio `User Service` (Javalin, config porta 81, connessione PostgreSQL, struttura package) | Servizio avviabile con health/config base | Alta |
 | US-BE-02 | FR2, FR9 | Database schema utenti | Creare schema tabella `utente` (id, username, email, password_hash, role, created_at, updated_at) con vincoli univoci e migration SQL | DB utenti pronto e versionato | Alta |
 | US-BE-03 | FR2, FR8 | Modello dominio/DAO | Implementare model, repository/DAO e service layer per CRUD logico utente (create/find/update/list) | Accesso dati utenti incapsulato | Alta |
-| US-BE-04 | FR8 | Sicurezza password | Integrare hashing password (`bcrypt`) e verifica password in login | Password mai salvate in chiaro | Alta |
-| US-BE-05 | FR2, FR8 | Endpoint registrazione | Implementare `POST /api/v1/users/register` con validazione input, controllo duplicati username/email e risposta standard | Registrazione utente funzionante | Alta |
+| US-BE-04 | FR8 | Sicurezza password | Integrare hashing password (`bcrypt`, con cost factor configurabile) e verifica password in login | Password mai salvate in chiaro | Alta |
+| US-BE-05 | FR2, FR8 | Endpoint registrazione | Implementare `POST /api/v1/users/register` con validazione input, controllo duplicati username/email e risposta con status `201 Created` e DTO utente (senza `password_hash`) | Registrazione utente funzionante | Alta |
 | US-BE-06 | FR2, FR8 | Endpoint login + JWT | Implementare `POST /api/v1/users/login` con verifica credenziali e generazione JWT contenente `sub`, `role`, expiry | Login con token JWT valido | Alta |
 | US-BE-07 | FR8 | Middleware autenticazione | Implementare filtro/middleware JWT per estrarre utente corrente e proteggere endpoint autenticati | Endpoint `/me` protetti | Alta |
 | US-BE-08 | FR9 | Middleware autorizzazione ruoli | Implementare controllo ruolo (`AMMINISTRATORE`) per endpoint admin | `GET /users` accessibile solo admin | Alta |
