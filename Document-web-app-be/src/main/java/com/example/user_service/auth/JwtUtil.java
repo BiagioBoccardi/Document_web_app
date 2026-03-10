@@ -2,7 +2,7 @@ package com.example.user_service.auth;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.example.user_service.models.User;
+import com.example.user_service.model.User;
 
 import java.util.Date;
 

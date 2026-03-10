@@ -1,13 +1,14 @@
 package com.example.user_service;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
-import com.example.user_service.auth.JwtUtil;
-import com.example.user_service.models.User;
-import com.example.user_service.persistence.HibernateUtil;
-import com.example.user_service.persistence.UserDao;
-import io.javalin.Javalin;
 import java.util.Map;
 import java.util.Optional;
+
+import com.example.user_service.auth.JwtUtil;
+import com.example.user_service.models.User;
+import com.example.user_service.persistence.UserDao;
+import at.favre.lib.crypto.bcrypt.BCrypt;
+import com.example.user_service.persistence.HibernateUtil;
+import io.javalin.Javalin;
 
 public class UserInitializer {
 

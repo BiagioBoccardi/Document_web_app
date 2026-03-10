@@ -1,13 +1,13 @@
 package com.example.user_service.persistence;
 
-import com.example.user_service.models.User;
+import java.util.List;
+import java.util.Optional;
+
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
-
-import java.util.List;
-import java.util.Optional;
+import com.example.user_service.models.User;
 
 public class UserDao {
 

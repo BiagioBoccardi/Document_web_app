@@ -1,4 +1,4 @@
-package com.example.user_service.models;
+package com.example.user_service.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -14,8 +14,7 @@ public class User {
     @Column(nullable = false)
     private String nome;
 
-    @Column(nullable = false)
-    private String cognome;
+    
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -33,9 +32,6 @@ public class User {
 
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
-
-    public String getCognome() { return cognome; }
-    public void setCognome(String cognome) { this.cognome = cognome; }
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }

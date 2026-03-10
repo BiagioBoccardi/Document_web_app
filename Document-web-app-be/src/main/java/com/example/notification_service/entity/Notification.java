@@ -3,7 +3,6 @@ package com.example.notification_service.entity;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -38,6 +37,14 @@ public class Notification {
 
     @Column(name = "read_at")
     private LocalDateTime readAt;
+
+    public void setStato(String stato) {
+        this.stato = stato;
+    }
+
+    public void setReadAt(LocalDateTime readAt) {
+        this.readAt = readAt;
+    }
 
     @PrePersist
     protected void onCreate() {

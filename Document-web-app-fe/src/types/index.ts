@@ -1,7 +1,8 @@
+import type { Hash } from "crypto";
+
 export interface IUser {
     id: number;
-    nome: string;
     email: string;
-    password: string;
+    password: Hash;
     isAdmin: boolean;
 }
