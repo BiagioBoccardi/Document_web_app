@@ -8,6 +8,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTCreationException;
 import com.example.user_service.model.User;
 import com.example.user_service.repository.UserRepository;
 
@@ -21,7 +22,7 @@ public class UserService {
         this.jwtSecret = jwtSecret;
     }
 
-    public User register(String nome, String cognome, String email, String plainPassword) {
+    public User register(String nome, String email, String plainPassword, boolean isAdmin) {
         Optional<User> existingUser = userRepository.findByEmail(email);
         if (existingUser.isPresent()) {
             throw new IllegalStateException("Email già registrata");
@@ -29,9 +30,9 @@ public class UserService {
 
         User user = new User();
         user.setNome(nome);
-        user.setCognome(cognome);
         user.setEmail(email);
-        user.setPasswordHash(BCrypt.hashpw(plainPassword, BCrypt.gensalt(12))); 
+        user.setAdmin(isAdmin);
+        user.setPasswordHash(BCrypt.hashpw(plainPassword, BCrypt.gensalt(12)));
 
         return userRepository.save(user);
     }
@@ -57,10 +58,9 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User non trovato"));
     }
 
-    public User updateProfile(int userId, String nome, String cognome) {
+    public User updateProfile(int userId, String nome) {
         User user = getProfile(userId);
         user.setNome(nome);
-        user.setCognome(cognome);
         return userRepository.update(user);
     }
 
@@ -70,11 +70,11 @@ public class UserService {
             return JWT.create()
                     .withSubject(String.valueOf(utente.getId()))
                     .withClaim("email", utente.getEmail())
-                    .withClaim("role", utente.isAdmin() ? "ADMIN" : "USER") 
+                    .withClaim("role", utente.isAdmin() ? "ADMIN" : "USER")
                     .withIssuedAt(Date.from(Instant.now()))
                     .withExpiresAt(Date.from(Instant.now().plusSeconds(3600)))
                     .sign(algorithm);
-        } catch (Exception ex) {
+        } catch (JWTCreationException ex) {
             throw new IllegalStateException("Errore nella generazione del token JWT", ex);
         }
     }

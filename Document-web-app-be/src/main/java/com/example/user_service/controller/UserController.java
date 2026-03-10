@@ -14,9 +14,9 @@ public class UserController {
     public AuthResponse register(RegisterRequest request) {
         User utente = userService.register(
                 request.nome(),
-                request.cognome(),
                 request.email(),
-                request.password()
+                request.password(),
+                request.isAdmin()
         );
 
         String token = userService.generateJwtToken(utente);
@@ -34,24 +34,22 @@ public class UserController {
         return new ProfileResponse(
                 utente.getId(),
                 utente.getNome(),
-                utente.getCognome(),
                 utente.getEmail(),
                 utente.isAdmin()
         );
     }
 
     public ProfileResponse updateProfile(int userId, UpdateProfileRequest request) {
-        User utente = userService.updateProfile(userId, request.nome(), request.cognome());
+        User utente = userService.updateProfile(userId, request.nome());
         return new ProfileResponse(
                 utente.getId(),
                 utente.getNome(),
-                utente.getCognome(),
                 utente.getEmail(),
                 utente.isAdmin()
         );
     }
 
-    public record RegisterRequest(String nome, String cognome, String email, String password) {
+    public record RegisterRequest(String nome, String email, String password, boolean isAdmin) {
 
     }
 
@@ -59,7 +57,7 @@ public class UserController {
 
     }
 
-    public record UpdateProfileRequest(String nome, String cognome) {
+    public record UpdateProfileRequest(String nome) {
 
     }
 
@@ -67,7 +65,7 @@ public class UserController {
 
     }
 
-    public record ProfileResponse(int id, String nome, String cognome, String email, boolean isAdmin) {
+    public record ProfileResponse(int id, String nome, String email, boolean isAdmin) {
 
     }
 }
