@@ -16,7 +16,7 @@ import io.javalin.http.HttpStatus;
 import io.javalin.http.UnauthorizedResponse;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
-
+    
 public class UserServiceApplication {
 
     private static final int DEFAULT_PORT = 8080;
