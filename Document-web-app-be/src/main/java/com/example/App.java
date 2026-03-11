@@ -1,5 +1,6 @@
 package com.example;
 
+import com.example.document_service.DocumentServiceApplication;
 import com.example.notification_service.NotificationServiceApplication;
 import com.example.user_service.UserServiceApplication;
 
@@ -48,6 +49,6 @@ public class App {
 
     private static void startDocumentService() {
         log.info("Inizializzazione Document Service...");
-        //DocumentServiceApplication.start();
+        DocumentServiceApplication.start();
     }
 }

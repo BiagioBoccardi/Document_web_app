@@ -2,9 +2,9 @@ import { Route, Routes } from "react-router-dom";
 import { LoginForm } from "./components/login-form";
 import { SignupForm } from "./components/signup-form";
 import { GroupsPage } from "./pages/GroupsPage";
-import { Layout } from "./components/Layout";
+import { Layout } from "./components/layout";
 import { ContextProvider } from "./context/context";
-import Homepage from "./pages/Homepage";
+import Homepage from "./pages/homepage";
 
 function App() {
   return (
