@@ -1,24 +1,20 @@
-import { Route, Routes } from "react-router"
-import { Layout } from "./components/layout"
-import { Homepage } from "./pages/homepage"
-import { SignupForm } from "./components/signup-form"
-import { LoginForm } from "./components/login-form"
-import { ContextProvider } from "./context/context"
-
+import { Route, Routes } from "react-router-dom";
+import { LoginForm } from "./components/login-form";
+import { SignupForm } from "./components/signup-form";
+import { Home } from "./pages/home";
+import { GroupsPage } from "./pages/GroupsPage";
+import { Layout } from "./components/Layout";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function App() {
-
   return (
-    <ContextProvider>
-      <Routes>
-        <Route path="/" element={<Layout/>}>
-          <Route index path="sign-in" element={<LoginForm/>}/>
-          <Route path="sign-up" element={<SignupForm/>}/>
-          <Route path="homepage" element={<Homepage/>}/>
-        </Route>
-      </Routes>
-    </ContextProvider>
-  )
+    <Routes>
+      <Route path="/" element={<Layout><Home /></Layout>} />
+      <Route path="/group" element={<Layout><ProtectedRoute><GroupsPage /></ProtectedRoute></Layout>} />
+      <Route path="/login" element={<LoginForm />} />
+      <Route path="/signup" element={<SignupForm />} />
+    </Routes>
+  );
 }
 
-export default App
+export default App;

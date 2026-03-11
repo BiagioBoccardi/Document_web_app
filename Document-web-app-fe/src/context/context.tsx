@@ -1,111 +1,112 @@
-import type { IUser } from "@/types";
-import { useContext, useEffect, useState, createContext } from "react";
-import { useNavigate } from "react-router";
+import React, { useContext, useState, createContext } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
-const API_URL = import.meta.env.VITE_API_URL;
+// L'API gateway è esposto sulla porta 8080, che instrada al servizio corretto.
+const API_URL = "http://127.0.0.1:8080";
 
-interface UserPayload {
-    nome: string;
-    email: string;
-    password: string;
-    isAdmin: boolean;
+interface User {
+  id: number;
+  nome: string;
+  email: string;
+  isAdmin: boolean;
 }
-
-interface SingInPayload {
-    email: string;
-    password: string;
-}
-
 
 interface ContextType {
-    users: IUser[];
-    currentUser: IUser | null;
-    fetchSignIn: (payload: SingInPayload) => Promise<void>;
-    fetchSignOut: () => void;
-    createUser: (payload: UserPayload) => Promise<void>;
-    fetchUsers: () => void;
+  currentUser: User | null;
+  fetchSignIn: (data: { email: string; password: string }) => Promise<void>;
+  createUser: (data: Omit<User, "id">) => Promise<void>;
+  signOut: () => void;
 }
 
-const UserContext = createContext<ContextType | null>(null);
+const Context = createContext<ContextType | undefined>(undefined);
 
-export function ContextProvider({ children }: { children: React.ReactNode }) {
-    const [users, setUsers] = useState<IUser[]>([]);
-    const [currentUser, setCurrentUser] = useState<IUser | null>(null);
-    const navigate = useNavigate();
+export const ContextProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-    const fetchUsers = async () => {
-        try {
-            const res = await fetch(`${API_URL}/api/v1/users`);
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            setUsers(data);
-        } catch (error) {
-            console.error("Errore caricamento users!", error);
-        }
-    };
+  const fetchSignIn = async (formData: { email: string; password: string }) => {
+    try {
+      const response = await fetch(`${API_URL}/api/v1/sign-in`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-    const fetchSignIn = async (credentials: SingInPayload) => {
-        try {
-            const res = await fetch(`${API_URL}/api/v1/sign-in`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(credentials),
-            });
+      if (!response.ok) {
+        throw new Error("Login failed");
+      }
 
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || "Login fallito");
-            }
+      const data = await response.json();
+      console.log("Login success:", data);
 
-            const data = await res.json(); 
-            setCurrentUser(data.user);
-            navigate("/homepage");
+      setCurrentUser(data.user);
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
 
-        } catch (error) {
-            console.error("Errore login:", error);
-            throw error;
-        }
-    };
-
-    const fetchSignOut = () => {
-        localStorage.removeItem("token");
-        setCurrentUser(null);
-        navigate("/sign-in");
-    };
-
-    const createUser = async (payload: UserPayload) => {
-        try {
-            const res = await fetch(`${API_URL}/api/v1/sign-up`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-      
-            if (!res.ok) {
-                const error = await res.text();
-                throw new Error(error);
-            }
-
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    useEffect(() => {
-        fetchUsers();
-    }, []);
-
-    return (
-        <UserContext.Provider value={{ users, currentUser, fetchSignIn, fetchSignOut, createUser, fetchUsers }}>
-            {children}
-        </UserContext.Provider>
-    );
-
-}
-export function useContextCast() {
-    const ctx = useContext(UserContext);
-    if (!ctx) {
-        throw new Error("useContextCast must be used within a UserProvider");
+      // Reindirizza alla pagina di origine se esiste (salvata in ProtectedRoute), altrimenti alla home
+      const origin = location.state?.from?.pathname || "/";
+      navigate(origin);
+    } catch (error) {
+      console.error("Dettagli errore login:", error);
+      // Mostra l'errore specifico invece di quello generico
+      alert(
+        `Errore login: ${error instanceof Error ? error.message : "Errore sconosciuto"}. Controlla che il backend sia avviato sulla porta 8080.`,
+      );
     }
-    return ctx;
-}
+  };
+
+  const createUser = async (formData: Omit<User, "id">) => {
+    try {
+      const response = await fetch(`${API_URL}/api/v1/sign-up`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Registrazione fallita");
+      }
+
+      alert(
+        "Registrazione avvenuta con successo! Ora puoi effettuare il login.",
+      );
+      navigate("/login");
+    } catch (error) {
+      console.error("Dettagli errore registrazione:", error);
+      alert(
+        `Errore registrazione: ${error instanceof Error ? error.message : "Errore sconosciuto"}.`,
+      );
+    }
+  };
+
+  const signOut = () => {
+    setCurrentUser(null);
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  return (
+    <Context.Provider value={{ currentUser, fetchSignIn, createUser, signOut }}>
+      {children}
+    </Context.Provider>
+  );
+};
+
+export const useContextCast = () => {
+  const context = useContext(Context);
+  if (context === undefined) {
+    throw new Error("useContextCast must be used within a ContextProvider");
+  }
+  return context;
+};

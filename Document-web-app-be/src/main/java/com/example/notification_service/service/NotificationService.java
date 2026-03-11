@@ -4,6 +4,8 @@ import com.example.notification_service.entity.Notification;
 import com.example.notification_service.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -13,7 +15,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class NotificationService {
 
+    private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
+
     private final NotificationRepository repository;
+
+    public NotificationService(NotificationRepository repository) {
+        this.repository = repository;
+    }
 
     /**
      * Recupera le notifiche di un utente specifico con paginazione e filtri.

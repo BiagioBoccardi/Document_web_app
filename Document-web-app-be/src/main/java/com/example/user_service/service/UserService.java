@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 
-import org.mindrot.jbcrypt.BCrypt;
+import at.favre.lib.crypto.bcrypt.BCrypt;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -22,7 +22,7 @@ public class UserService {
         this.jwtSecret = jwtSecret;
     }
 
-    public User register(String nome, String email, String plainPassword, boolean isAdmin) {
+    public User register(String nome, String cognome, String email, String plainPassword) {
         Optional<User> existingUser = userRepository.findByEmail(email);
         if (existingUser.isPresent()) {
             throw new IllegalStateException("Email già registrata");
@@ -30,9 +30,13 @@ public class UserService {
 
         User user = new User();
         user.setNome(nome);
+        user.setCognome(cognome);
         user.setEmail(email);
-        user.setAdmin(isAdmin);
-        user.setPasswordHash(BCrypt.hashpw(plainPassword, BCrypt.gensalt(12)));
+        user.setAdmin(false);
+        
+        // Genera l'hash della password con la libreria presente nel tuo pom.xml
+        String hash = BCrypt.withDefaults().hashToString(12, plainPassword.toCharArray());
+        user.setPassword(hash);
 
         return userRepository.save(user);
     }
@@ -41,7 +45,9 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Credenziali non valide"));
 
-        if (!BCrypt.checkpw(plainPassword, user.getPasswordHash())) {
+        // Verifica l'hash della password
+        BCrypt.Result result = BCrypt.verifyer().verify(plainPassword.toCharArray(), user.getPassword());
+        if (!result.verified) {
             throw new IllegalArgumentException("Credenziali non valide");
         }
 
@@ -58,9 +64,10 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User non trovato"));
     }
 
-    public User updateProfile(int userId, String nome) {
+    public User updateProfile(int userId, String nome, String cognome) {
         User user = getProfile(userId);
         user.setNome(nome);
+        user.setCognome(cognome);
         return userRepository.update(user);
     }
 

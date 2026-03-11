@@ -5,12 +5,15 @@ import com.example.notification_service.NotificationServiceApplication;
 import com.example.user_service.UserServiceApplication;
 
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Slf4j
 public class App {
+    private static final Logger log = LoggerFactory.getLogger(App.class);
     public static void main(String[] args) {
         String serviceType = System.getenv("SERVICE_TYPE");
-        //porta di default dei microservizi, può essere sovrascritta da una variabile d'ambiente PORT
+        // porta di default dei microservizi, può essere sovrascritta da una variabile d'ambiente PORT
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080")); 
 
         if (serviceType == null) {
@@ -22,7 +25,7 @@ public class App {
 
         switch (serviceType) {
             case "USER_SERVICE" -> startUserService();
-            case "NOTIFICATION_SERVICE" -> startNotificationService();
+            case "NOTIFICATION_SERVICE" -> startNotificationService(port); // Passiamo la porta qui
             case "SEARCH_SERVICE" -> startSearchService();
             case "DOCUMENT_SERVICE" -> startDocumentService();
             default -> {
@@ -33,24 +36,22 @@ public class App {
     }
 
     private static void startUserService() {
-        // Qui inizializzi Hibernate per Postgres e i relativi endpoint
         log.info("Inizializzazione User Service su Postgres...");
         UserServiceApplication.start();
     }
 
-    private static void startNotificationService() {
-        // Qui inizializzi la connessione a RabbitMQ
+    private static void startNotificationService(int port) {
         log.info("Inizializzazione Notification Service su RabbitMQ...");
-        NotificationServiceApplication.start();
+        // Creiamo l'istanza e avviamo passando la porta corretta
+        NotificationServiceApplication notificationApp = new NotificationServiceApplication();
+        notificationApp.start(port);
     }
 
     private static void startSearchService() {
-        // Qui inizializzi la connessione a Elasticsearch
         log.info("Inizializzazione Search Service su Elasticsearch...");
     }
 
     private static void startDocumentService() {
-        // Qui avvii il microservizio Document Service
         log.info("Inizializzazione Document Service...");
         DocumentServiceApplication.start();
     }

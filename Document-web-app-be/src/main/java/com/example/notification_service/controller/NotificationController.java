@@ -5,6 +5,8 @@ import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.UUID;
@@ -13,7 +15,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class NotificationController {
 
+    private static final Logger log = LoggerFactory.getLogger(NotificationController.class);
+
     private final NotificationService service;
+
+    public NotificationController(NotificationService service) {
+        this.service = service;
+    }
 
     /**
      * GET /api/v1/notifications

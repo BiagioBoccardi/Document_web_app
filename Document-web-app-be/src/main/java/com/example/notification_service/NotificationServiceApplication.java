@@ -9,9 +9,12 @@ import com.example.notification_service.messaging.EventConsumer;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Slf4j
 public class NotificationServiceApplication {
+    private static final Logger log = LoggerFactory.getLogger(NotificationServiceApplication.class);
     private final Javalin app;
     private final NotificationController notificationController;
     private final EventConsumer eventConsumer;
@@ -63,13 +66,9 @@ public class NotificationServiceApplication {
         app.get("/health", ctx -> ctx.status(HttpStatus.OK).result("UP"));
 
         // Gruppo API Notifiche v1
-        app.routes(() -> {
-            app.path("/api/v1/notifications", () -> {
-                app.get(notificationController::listNotifications);          // GET lista
-                app.put("/{id}/read", notificationController::markAsRead);   // PUT mark as read
-                app.delete("/{id}", notificationController::deleteNotification); // DELETE
-            });
-        });
+        app.get("/api/v1/notifications", notificationController::listNotifications);          // GET lista
+        app.put("/api/v1/notifications/{id}/read", notificationController::markAsRead);   // PUT mark as read
+        app.delete("/api/v1/notifications/{id}", notificationController::deleteNotification); // DELETE
     }
 
     /**

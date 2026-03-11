@@ -11,61 +11,72 @@ public class UserController {
         this.userService = userService;
     }
 
-    public AuthResponse register(RegisterRequest request) {
-        User utente = userService.register(
-                request.nome(),
-                request.email(),
-                request.password(),
-                request.isAdmin()
-        );
+    // --- CLASSI DI RICHIESTA (DTO) ---
+    public static class RegisterRequest {
+        public String nome;
+        public String cognome;
+        public String email;
+        public String password;
+    }
 
-        String token = userService.generateJwtToken(utente);
-        return new AuthResponse(utente.getId(), utente.getEmail(), token);
+    public static class LoginRequest {
+        public String email;
+        public String password;
+    }
+
+    public static class UpdateProfileRequest {
+        public String nome;
+        public String cognome;
+    }
+
+    // --- CLASSI DI RISPOSTA (DTO) ---
+    public static class AuthResponse {
+        public String token;
+        public User user;
+
+        public AuthResponse(String token, User user) {
+            this.token = token;
+            this.user = user;
+        }
+    }
+
+    public static class ProfileResponse {
+        public int id;
+        public String nome;
+        public String cognome;
+        public String email;
+        public boolean isAdmin;
+
+        public ProfileResponse(User user) {
+            this.id = user.getId();
+            this.nome = user.getNome();
+            this.cognome = user.getCognome();
+            this.email = user.getEmail();
+            this.isAdmin = user.isAdmin();
+        }
+    }
+
+    // --- METODI DEL CONTROLLER ---
+
+    public AuthResponse register(RegisterRequest request) {
+        User user = userService.register(request.nome, request.email, request.password);
+        String token = userService.generateJwtToken(user);
+        return new AuthResponse(token, user);
     }
 
     public AuthResponse login(LoginRequest request) {
-        User utente = userService.login(request.email(), request.password());
-        String token = userService.generateJwtToken(utente);
-        return new AuthResponse(utente.getId(), utente.getEmail(), token);
+        User user = userService.login(request.email, request.password);
+        String token = userService.generateJwtToken(user);
+        return new AuthResponse(token, user);
     }
 
     public ProfileResponse getProfile(int userId) {
-        User utente = userService.getProfile(userId);
-        return new ProfileResponse(
-                utente.getId(),
-                utente.getNome(),
-                utente.getEmail(),
-                utente.isAdmin()
-        );
+        User user = userService.getProfile(userId);
+        return new ProfileResponse(user);
     }
 
     public ProfileResponse updateProfile(int userId, UpdateProfileRequest request) {
-        User utente = userService.updateProfile(userId, request.nome());
-        return new ProfileResponse(
-                utente.getId(),
-                utente.getNome(),
-                utente.getEmail(),
-                utente.isAdmin()
-        );
-    }
-
-    public record RegisterRequest(String nome, String email, String password, boolean isAdmin) {
-
-    }
-
-    public record LoginRequest(String email, String password) {
-
-    }
-
-    public record UpdateProfileRequest(String nome) {
-
-    }
-
-    public record AuthResponse(int id, String email, String token) {
-
-    }
-
-    public record ProfileResponse(int id, String nome, String email, boolean isAdmin) {
-
+        User user = userService.updateProfile(userId, request.nome, request.cognome);
+        return new ProfileResponse(user);
     }
 }

@@ -1,7 +1,5 @@
 package com.example.search_service.embedding;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 /**
@@ -21,13 +19,13 @@ public class MockEmbeddingProvider implements EmbeddingProvider {
     }
 
     @Override
-    public List<Float> createEmbedding(String text) {
-        List<Float> embedding = new ArrayList<>(vectorSize);
+    public float[] createEmbedding(String text) {
+        float[] embedding = new float[vectorSize];
         
         // Genera un vettore casuale
         for (int i = 0; i < vectorSize; i++) {
             // Valori casuali tra -1.0 e 1.0
-            embedding.add((random.nextFloat() * 2) - 1.0f);
+            embedding[i] = (random.nextFloat() * 2) - 1.0f;
         }
         
         return embedding;
