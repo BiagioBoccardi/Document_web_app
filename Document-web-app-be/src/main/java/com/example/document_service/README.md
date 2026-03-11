@@ -2,17 +2,44 @@
 
 Questa guida copre i passaggi **esterni al codice** per eseguire il backend `document_service` con MongoDB.
 
+## 0) Dipendenze aggiuntive Maven
+- Tesseract OCR (per elaborazione PDF/DOC/XLS)
+
+- Apache POI (per leggere file Office):
+
+Nel `pom.xml`:
+
+```xml
+<!-- Apache POI per DOC/DOCX/XLS/XLSX -->
+<dependency>
+    <groupId>org.apache.poi</groupId>
+    <artifactId>poi</artifactId>
+    <version>3.17</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.poi</groupId>
+    <artifactId>poi-ooxml</artifactId>
+    <version>3.17</version>
+</dependency>
+
+<!-- Tess4J per OCR -->
+<dependency>
+    <groupId>net.sourceforge.tess4j</groupId>
+    <artifactId>tess4j</artifactId>
+    <version>5.5.0</version>
+</dependency>
+
 ## 1) Prerequisiti macchina
 
 - Docker Desktop (consigliato), oppure MongoDB locale installato
 - Java 21 runtime disponibile
-- Porta libera per servizio backend (`82`) e MongoDB (`27017`)
+- Porta libera per servizio backend (`8082`) e MongoDB (`27017`)
 
 ## 2) Configurare variabili ambiente
 
 Il `DocumentServiceApplication` usa queste variabili:
 
-- `APP_PORT` (default `82`)
+- `APP_PORT` (default `8082`)
 - `MONGO_URI` (default `mongodb://localhost:27017`)
 - `MONGO_DB` (default `document_web_app`)
 - `MONGO_COLLECTION` (default `documents`)
@@ -22,7 +49,7 @@ Il `DocumentServiceApplication` usa queste variabili:
 Esempio PowerShell:
 
 ```powershell
-$env:APP_PORT="82"
+$env:APP_PORT="8082"
 $env:MONGO_URI="mongodb://localhost:27017"
 $env:MONGO_DB="document_web_app"
 $env:MONGO_COLLECTION="documents"
@@ -70,7 +97,7 @@ mvn exec:java
 
 ## 6) Smoke test API minimi
 
-1. `POST /api/v1/documents` (multipart, campo `file` = `.txt`)
+1. `POST /api/v1/documents` (multipart, campo `file` = `.txt, .pdf, .doc, .docx, .xls, .xlsx`)
 2. `GET /api/v1/documents?page=0&size=20&sort=desc`
 3. `GET /api/v1/documents/{id}`
 4. `PUT /api/v1/documents/{id}`
@@ -80,3 +107,11 @@ Header richiesto:
 
 - `Authorization: Bearer <jwt-valido>`
   - oppure fallback gateway `X-User-Id` se configurato a monte
+
+## 7) Note operative
+
+- Il servizio supporta l’upload di file binari su MongoDB GridFS e gestisce estrazione testo tramite OCR per PDF/Office.
+
+- I file .txt vengono processati direttamente senza OCR.
+
+- I metadati dei documenti (dimensione, mime-type, checksum, tipo file) vengono calcolati automaticamente.
