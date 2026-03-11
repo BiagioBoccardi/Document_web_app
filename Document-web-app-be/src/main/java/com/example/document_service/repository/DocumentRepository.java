@@ -19,6 +19,8 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.gridfs.GridFSBucket;
+import com.mongodb.client.gridfs.GridFSBuckets;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.ReplaceOptions;
@@ -28,6 +30,7 @@ public class DocumentRepository {
 
 	private final MongoClient mongoClient;
 	private final MongoCollection<Document> collection;
+	private final GridFSBucket gridFSBucket;
 
 	public DocumentRepository(String mongoUri, String databaseName, String collectionName) {
 		CodecProvider pojoCodecProvider = PojoCodecProvider.builder().automatic(true).build();
@@ -43,7 +46,16 @@ public class DocumentRepository {
 		this.mongoClient = MongoClients.create(settings);
 		MongoDatabase database = this.mongoClient.getDatabase(databaseName);
 		this.collection = database.getCollection(collectionName, Document.class);
+		
+		// Inizializzazione GridFSBucket per la gestione dei file binari
+		this.gridFSBucket = GridFSBuckets.create(database);
+
 		ensureIndexes();
+	}
+
+	// getter per GridFSBucket
+	public GridFSBucket getGridFSBucket() {
+		return gridFSBucket;
 	}
 
 	private void ensureIndexes() {

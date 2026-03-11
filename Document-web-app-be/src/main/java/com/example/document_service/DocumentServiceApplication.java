@@ -8,12 +8,13 @@ import com.example.document_service.event.NoOpDocumentEventPublisher;
 import com.example.document_service.http.DocumentAuthMiddleware;
 import com.example.document_service.http.DocumentHttpErrorHandler;
 import com.example.document_service.repository.DocumentRepository;
+import com.example.document_service.service.DocumentOCRService;
 import com.example.document_service.service.DocumentService;
 
 import io.javalin.Javalin;
 
 public class DocumentServiceApplication {
-    private static final int DEFAULT_PORT = 82;
+    private static final int DEFAULT_PORT = 8082;
     private static final String DEFAULT_MONGO_URI = "mongodb://localhost:27017";
     private static final String DEFAULT_MONGO_DB = "document_web_app";
     private static final String DEFAULT_MONGO_COLLECTION = "documents";
@@ -33,7 +34,8 @@ public class DocumentServiceApplication {
 
         DocumentRepository documentRepository = new DocumentRepository(mongoUri, mongoDb, mongoCollection);
         DocumentEventPublisher eventPublisher = new NoOpDocumentEventPublisher();
-        DocumentService documentService = new DocumentService(documentRepository, eventPublisher);
+        DocumentOCRService ocrService = new DocumentOCRService();
+        DocumentService documentService = new DocumentService(documentRepository, eventPublisher, ocrService);
         DocumentController documentController = new DocumentController(documentService);
         DocumentAuthMiddleware documentAuthMiddleware = new DocumentAuthMiddleware(jwtSecret, jwtIssuer);
 

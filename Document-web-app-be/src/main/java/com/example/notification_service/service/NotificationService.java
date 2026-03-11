@@ -19,9 +19,6 @@ public class NotificationService {
 
     private final NotificationRepository repository;
 
-    public NotificationService(NotificationRepository repository) {
-        this.repository = repository;
-    }
 
     /**
      * Recupera le notifiche di un utente specifico con paginazione e filtri.

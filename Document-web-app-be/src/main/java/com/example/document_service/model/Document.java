@@ -1,9 +1,11 @@
 package com.example.document_service.model;
+
 import java.util.Date;
 
 import org.bson.BsonType;
 import org.bson.codecs.pojo.annotations.BsonId;
 import org.bson.codecs.pojo.annotations.BsonRepresentation;
+import org.bson.types.ObjectId;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,4 +24,5 @@ public class Document {
     private Date uploadDate;
     private Date lastModified;
     private DocumentMetadata metadata;
+    private ObjectId gridFSId; // aggiunto per file binari
 }
