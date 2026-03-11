@@ -30,13 +30,12 @@ public class UserService {
 
         User user = new User();
         user.setNome(nome);
-        user.setCognome(cognome);
         user.setEmail(email);
         user.setAdmin(false);
         
         // Genera l'hash della password con la libreria presente nel tuo pom.xml
         String hash = BCrypt.withDefaults().hashToString(12, plainPassword.toCharArray());
-        user.setPassword(hash);
+        user.setPasswordHash(hash);
 
         return userRepository.save(user);
     }

@@ -13,6 +13,7 @@ public class UserController {
 
     // --- CLASSI DI RICHIESTA (DTO) ---
     public static class RegisterRequest {
+
         public String nome;
         public String cognome;
         public String email;
@@ -20,17 +21,20 @@ public class UserController {
     }
 
     public static class LoginRequest {
+
         public String email;
         public String password;
     }
 
     public static class UpdateProfileRequest {
+
         public String nome;
         public String cognome;
     }
 
     // --- CLASSI DI RISPOSTA (DTO) ---
     public static class AuthResponse {
+
         public String token;
         public User user;
 
@@ -41,6 +45,7 @@ public class UserController {
     }
 
     public static class ProfileResponse {
+
         public int id;
         public String nome;
         public String cognome;
@@ -50,16 +55,14 @@ public class UserController {
         public ProfileResponse(User user) {
             this.id = user.getId();
             this.nome = user.getNome();
-            this.cognome = user.getCognome();
             this.email = user.getEmail();
             this.isAdmin = user.isAdmin();
         }
     }
 
     // --- METODI DEL CONTROLLER ---
-
     public AuthResponse register(RegisterRequest request) {
-        User user = userService.register(request.nome, request.email, request.password);
+        User user = userService.register(request.nome, request.email, request.passwordHash);
         String token = userService.generateJwtToken(user);
         return new AuthResponse(token, user);
     }
