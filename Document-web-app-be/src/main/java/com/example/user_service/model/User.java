@@ -11,8 +11,9 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 @Data
-@NoArgsConstructor
+@NoArgsConstructor          
 @AllArgsConstructor
 @Entity
 @Table(name = "utente")
@@ -20,24 +21,18 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private int id;         
 
     @Column(nullable = false)
     private String nome;
-
-    
 
     @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false)
-    @JsonIgnore // Non inviare mai la password al frontend
+    @JsonIgnore
     private String passwordHash;
 
     @Column(name = "isadmin", nullable = false)
     private boolean isAdmin;
-
-    
-
-    
 }

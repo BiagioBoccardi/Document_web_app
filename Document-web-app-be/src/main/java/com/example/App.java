@@ -1,6 +1,5 @@
 package com.example;
 
-import com.example.document_service.DocumentServiceApplication;
 import com.example.notification_service.NotificationServiceApplication;
 import com.example.user_service.UserServiceApplication;
 
@@ -39,7 +38,7 @@ public class App {
     private static void startNotificationService() {
         log.info("Inizializzazione Notification Service su RabbitMQ...");
         NotificationServiceApplication notificationApp = new NotificationServiceApplication();
-        // notificationApp.start();
+        // notificationApp.start(); 
     }
 
     private static void startSearchService() {
@@ -49,6 +48,6 @@ public class App {
 
     private static void startDocumentService() {
         log.info("Inizializzazione Document Service...");
-        // DocumentServiceApplication.start();
+        //DocumentServiceApplication.start();
     }
 }

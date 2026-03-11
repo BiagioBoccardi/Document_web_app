@@ -1,7 +1,7 @@
 package com.example.user_service.service;
+
 import java.util.List;
 import java.util.Optional;
-
 
 import com.example.user_service.model.User;
 import com.example.user_service.repository.UserRepository;
@@ -11,11 +11,9 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 public class UserService {
 
     private final UserRepository userRepository;
-    
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        
     }
 
     public User register(String nome, String email, String plainPassword) {
@@ -28,8 +26,7 @@ public class UserService {
         user.setNome(nome);
         user.setEmail(email);
         user.setAdmin(false);
-        
-        // Genera l'hash della password con la libreria presente nel tuo pom.xml
+
         String hash = BCrypt.withDefaults().hashToString(12, plainPassword.toCharArray());
         user.setPasswordHash(hash);
 
@@ -40,7 +37,6 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Credenziali non valide"));
 
-        // Verifica l'hash della password
         BCrypt.Result result = BCrypt.verifyer().verify(plainPassword.toCharArray(), user.getPasswordHash());
         if (!result.verified) {
             throw new IllegalArgumentException("Credenziali non valide");
@@ -49,7 +45,7 @@ public class UserService {
         return user;
     }
 
-    public User getProfile(int userId) {
+    public User getProfile(int userId) {           
         return userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User non trovato"));
     }
@@ -58,19 +54,19 @@ public class UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User non trovato"));
     }
-    
+
     public List<User> getAllUsers() {               
         return userRepository.findAll();
     }
 
     public User updateProfile(int userId, String nome, String email) {  
         User user = getProfile(userId);
-
+    
         if (nome != null && !nome.isBlank()) {
             user.setNome(nome);
         }
         if (email != null && !email.isBlank()) {
-           Optional<User> conflict = userRepository.findByEmail(email);
+            Optional<User> conflict = userRepository.findByEmail(email);
             if (conflict.isPresent() && conflict.get().getId() != userId) { 
                 throw new IllegalStateException("Email già in uso");
             }
@@ -79,6 +75,4 @@ public class UserService {
     
         return userRepository.update(user);
     }
-
-   
 }

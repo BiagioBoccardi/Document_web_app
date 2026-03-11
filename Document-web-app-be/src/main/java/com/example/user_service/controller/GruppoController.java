@@ -6,6 +6,7 @@ import com.example.user_service.model.Gruppo;
 import com.example.user_service.model.User;
 import com.example.user_service.service.GruppoService;
 import com.example.user_service.service.UserService;
+
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
