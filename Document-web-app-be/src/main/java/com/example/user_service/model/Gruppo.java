@@ -1,16 +1,22 @@
 package com.example.user_service.model;
 
 import jakarta.persistence.*;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
 import java.util.List;
 import java.util.ArrayList;
-
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "gruppo")
 public class Gruppo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     @Column(nullable = false)
     private String name;
@@ -19,7 +25,7 @@ public class Gruppo {
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
         name = "gruppo_membri",
         joinColumns = @JoinColumn(name = "gruppo_id"),
@@ -27,16 +33,5 @@ public class Gruppo {
     )
     private List<User> membri = new ArrayList<>();
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public User getOwner() { return owner; }
-    public void setOwner(User owner) { this.owner = owner; }
-
-    public List<User> getMembri() { return membri; }
-    public void setMembri(List<User> membri) { this.membri = membri; }
+   
 }

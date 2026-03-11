@@ -1,8 +1,8 @@
 CREATE TABLE utente (
     id SERIAL PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
+    nome VARCHAR(20) NOT NULL,
+    email VARCHAR(20) NOT NULL UNIQUE,
+    password_hash VARCHAR(20) NOT NULL,
     isAdmin BOOLEAN NOT NULL DEFAULT FALSE
 );
 

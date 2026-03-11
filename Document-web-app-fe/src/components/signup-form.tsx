@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useContextCast } from "@/context/context";
 import { useState } from "react";
+import { Link } from "react-router";
 import { useNavigate } from "react-router";
 import z from "zod";
 
@@ -22,7 +23,7 @@ const createUserFormSchema = z
   .object({
     nome: z.string().min(2, "Il nome è obbligatorio"),
     email: z.string().email("Email non valida"),
-    password: z
+    passwordHash: z
       .string()
       .min(8, "La password deve essere lunga almeno 8 caratteri")
       .regex(/[a-zA-Z]/, "La password deve contenere almeno una lettera")
@@ -32,7 +33,7 @@ const createUserFormSchema = z
       .min(8, "La password di conferma deve essere lunga almeno 8 caratteri"),
     isAdmin: z.boolean(),
   })
-  .refine((data) => data.password === data.confirmPassword, {
+  .refine((data) => data.passwordHash === data.confirmPassword, {
     message: "Le password non coincidono",
     path: ["confirmPassword"],
   });
@@ -55,7 +56,7 @@ export function SignupForm({
     const data = {
       nome: formData.get("nome") as string,
       email: formData.get("email") as string,
-      password: formData.get("password") as string,
+      passwordHash: formData.get("passwordHash") as string,
       confirmPassword: formData.get("confirmPassword") as string,
       isAdmin,
     };
@@ -76,14 +77,14 @@ export function SignupForm({
     const payload = {
       nome: parsed.data.nome,
       email: parsed.data.email,
-      password: parsed.data.password,
-      isAdmin: parsed.data.isAdmin,
+      passwordHash: parsed.data.passwordHash
+      
     };
 
     await createUser(payload);
     form.reset();
     setIsAdmin(false);
-    navigate("/");
+    
   };
 
   return (
@@ -129,10 +130,10 @@ export function SignupForm({
                   )}
                 </Field>
                 <Field className="grid gap-1.5">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <FieldLabel htmlFor="passwordHash">Password</FieldLabel>
                   <Input
-                    id="password"
-                    name="password"
+                    id="passwordHash"
+                    name="passwordHash"
                     type="password"
                     aria-invalid={!!errors.password}
                   />
@@ -164,15 +165,14 @@ export function SignupForm({
                 <FieldGroup>
                   <Field>
                     <Button type="submit">Crea Account</Button>
-                    <FieldDescription className="px-6 text-center">
-                      hai già un'account?{" "}
-                      <Button
-                        variant="link"
-                        type="button"
-                        onClick={onSwitchToLogin}
+                    <FieldDescription className="text-center">
+                      Non hai un account?
+                      <Link
+                        to="/signin"
+                        className="text-blue-500 hover:underline"
                       >
                         Accedi
-                      </Button>
+                      </Link>
                     </FieldDescription>
                   </Field>
                 </FieldGroup>
