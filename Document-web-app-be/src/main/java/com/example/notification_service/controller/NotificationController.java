@@ -19,9 +19,7 @@ public class NotificationController {
 
     private final NotificationService service;
 
-    public NotificationController(NotificationService service) {
-        this.service = service;
-    }
+
 
     /**
      * GET /api/v1/notifications

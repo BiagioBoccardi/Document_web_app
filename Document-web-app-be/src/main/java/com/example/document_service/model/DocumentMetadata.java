@@ -11,4 +11,5 @@ public class DocumentMetadata {
     private long size;
     private String mimeType;
     private String checksum;
+    private String fileType; // aggiunto fileType
 }

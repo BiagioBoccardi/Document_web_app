@@ -20,7 +20,7 @@ import z from "zod";
 
 const loginSchema = z.object({
   email: z.string().email("Inserisci un indirizzo email valido"),
-  password: z.string().min(8, "La password è obbligatoria"),
+  passwordHash: z.string().min(8, "La password è obbligatoria"),
 });
 
 export function LoginForm() {
@@ -76,11 +76,11 @@ export function LoginForm() {
                   </Field>
                   <Field>
                     <div className="flex items-center">
-                      <FieldLabel htmlFor="password">Password</FieldLabel>
+                      <FieldLabel htmlFor="passwordHash">Password</FieldLabel>
                     </div>
                     <Input
-                      id="password"
-                      name="password"
+                      id="passwordHash"
+                      name="passwordHash"
                       type="password"
                       required
                       aria-invalid={!!errors.password}
@@ -92,7 +92,7 @@ export function LoginForm() {
                   <Field>
                     <Button type="submit">Login</Button>
                     <FieldDescription className="text-center">
-                      Non hai un account?{" "}
+                      Non hai un account?
                       <Link
                         to="/signup"
                         className="text-blue-500 hover:underline"

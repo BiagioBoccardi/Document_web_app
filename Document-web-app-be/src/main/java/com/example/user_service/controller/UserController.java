@@ -1,7 +1,13 @@
 package com.example.user_service.controller;
 
+import com.example.user_service.dto.LoginRequest;
+import com.example.user_service.dto.RegisterRequest;
 import com.example.user_service.model.User;
 import com.example.user_service.service.UserService;
+
+import io.javalin.Javalin;
+import io.javalin.http.Context;
+import io.javalin.http.HttpStatus;
 
 public class UserController {
 
@@ -11,75 +17,45 @@ public class UserController {
         this.userService = userService;
     }
 
-    // --- CLASSI DI RICHIESTA (DTO) ---
-    public static class RegisterRequest {
-
-        public String nome;
-        public String cognome;
-        public String email;
-        public String password;
+    public void registerRoutes(Javalin app) {
+        app.post("/api/v1/users/sign-up", this::register);
+        app.post("/api/v1/users/sign-in", this::login);
     }
 
-    public static class LoginRequest {
+    // POST /api/users/register
+    private void register(Context ctx) {
+        RegisterRequest body = ctx.bodyAsClass(RegisterRequest.class);
 
-        public String email;
-        public String password;
-    }
+        if (body.nome == null || body.nome.isBlank() ||
+            body.email == null || body.email.isBlank() ||
+            body.passwordHash == null || body.passwordHash.isBlank()) {
+            ctx.status(HttpStatus.BAD_REQUEST);
+            return;
+        }
 
-    public static class UpdateProfileRequest {
-
-        public String nome;
-        public String cognome;
-    }
-
-    // --- CLASSI DI RISPOSTA (DTO) ---
-    public static class AuthResponse {
-
-        public String token;
-        public User user;
-
-        public AuthResponse(String token, User user) {
-            this.token = token;
-            this.user = user;
+        try {
+            User user = userService.register(body.nome, body.email, body.passwordHash);
+            ctx.status(HttpStatus.CREATED).json(user);
+        } catch (IllegalStateException ex) {
+            ctx.status(HttpStatus.CONFLICT);
         }
     }
 
-    public static class ProfileResponse {
+    // POST /api/users/login
+    private void login(Context ctx) {
+        LoginRequest body = ctx.bodyAsClass(LoginRequest.class);
 
-        public int id;
-        public String nome;
-        public String cognome;
-        public String email;
-        public boolean isAdmin;
-
-        public ProfileResponse(User user) {
-            this.id = user.getId();
-            this.nome = user.getNome();
-            this.email = user.getEmail();
-            this.isAdmin = user.isAdmin();
+        if (body.email == null || body.email.isBlank() ||
+            body.passwordHash == null || body.passwordHash.isBlank()) {
+            ctx.status(HttpStatus.BAD_REQUEST);
+            return;
         }
-    }
 
-    // --- METODI DEL CONTROLLER ---
-    public AuthResponse register(RegisterRequest request) {
-        User user = userService.register(request.nome, request.email, request.passwordHash);
-        String token = userService.generateJwtToken(user);
-        return new AuthResponse(token, user);
-    }
-
-    public AuthResponse login(LoginRequest request) {
-        User user = userService.login(request.email, request.password);
-        String token = userService.generateJwtToken(user);
-        return new AuthResponse(token, user);
-    }
-
-    public ProfileResponse getProfile(int userId) {
-        User user = userService.getProfile(userId);
-        return new ProfileResponse(user);
-    }
-
-    public ProfileResponse updateProfile(int userId, UpdateProfileRequest request) {
-        User user = userService.updateProfile(userId, request.nome, request.cognome);
-        return new ProfileResponse(user);
+        try {
+            User user = userService.login(body.email, body.passwordHash); 
+            ctx.status(HttpStatus.OK).json(user);
+        } catch (IllegalArgumentException ex) {
+            ctx.status(HttpStatus.UNAUTHORIZED);
+        }
     }
 }
