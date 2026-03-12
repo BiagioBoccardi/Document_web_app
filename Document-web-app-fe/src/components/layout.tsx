@@ -1,19 +1,16 @@
-import React from "react";
+
 import { Navbar } from "./navbar";
-import { Toaster } from "@/components/ui/toaster";
+import { Outlet } from "react-router";
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
 
-export const Layout: React.FC<LayoutProps> = ({ children }) => {
+export const Layout = () => {
   return (
     <div>
       <Navbar />
       <main className="pt-14">
-        {children}
+        <Outlet/>
       </main>
-      <Toaster />
+      
     </div>
   );
 };

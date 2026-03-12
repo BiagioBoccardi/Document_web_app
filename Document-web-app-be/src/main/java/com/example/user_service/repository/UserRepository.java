@@ -1,5 +1,6 @@
 package com.example.user_service.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.example.user_service.model.User;
@@ -50,6 +51,14 @@ public class UserRepository {
         try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
             User result = entityManager.find(User.class, id);
             return Optional.ofNullable(result);
+        }
+    }
+    
+    public List<User> findAll() {                   
+        try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
+            return entityManager
+                    .createQuery("SELECT u FROM User u", User.class)
+                    .getResultList();
         }
     }
 

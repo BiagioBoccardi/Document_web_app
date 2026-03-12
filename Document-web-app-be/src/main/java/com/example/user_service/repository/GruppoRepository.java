@@ -32,14 +32,14 @@ public class GruppoRepository {
         }
     }
 
-    public Optional<Gruppo> findById(Long id) {
+    public Optional<Gruppo> findById(int id) {
         try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
             Gruppo result = entityManager.find(Gruppo.class, id);
             return Optional.ofNullable(result);
         }
     }
 
-    public Optional<Gruppo> findByIdWithDetails(Long id) {
+    public Optional<Gruppo> findByIdWithDetails(int id) {
         try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
             try {
                 Gruppo result = entityManager
@@ -81,7 +81,7 @@ public class GruppoRepository {
         }
     }
 
-    public void delete(Long id) {
+    public void delete(int id) {
         try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
             try {
                 entityManager.getTransaction().begin();

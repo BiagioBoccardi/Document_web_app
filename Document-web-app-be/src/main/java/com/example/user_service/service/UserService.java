@@ -1,28 +1,22 @@
 package com.example.user_service.service;
 
-import java.time.Instant;
-import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
-
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTCreationException;
 import com.example.user_service.model.User;
 import com.example.user_service.repository.UserRepository;
+
+import at.favre.lib.crypto.bcrypt.BCrypt;
 
 public class UserService {
 
     private final UserRepository userRepository;
-    private final String jwtSecret;
 
-    public UserService(UserRepository userRepository, String jwtSecret) {
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.jwtSecret = jwtSecret;
     }
 
-    public User register(String nome, String cognome, String email, String plainPassword) {
+    public User register(String nome, String email, String plainPassword) {
         Optional<User> existingUser = userRepository.findByEmail(email);
         if (existingUser.isPresent()) {
             throw new IllegalStateException("Email già registrata");
@@ -32,8 +26,7 @@ public class UserService {
         user.setNome(nome);
         user.setEmail(email);
         user.setAdmin(false);
-        
-        // Genera l'hash della password con la libreria presente nel tuo pom.xml
+
         String hash = BCrypt.withDefaults().hashToString(12, plainPassword.toCharArray());
         user.setPasswordHash(hash);
 
@@ -44,8 +37,7 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Credenziali non valide"));
 
-        // Verifica l'hash della password
-        BCrypt.Result result = BCrypt.verifyer().verify(plainPassword.toCharArray(), user.getPassword());
+        BCrypt.Result result = BCrypt.verifyer().verify(plainPassword.toCharArray(), user.getPasswordHash());
         if (!result.verified) {
             throw new IllegalArgumentException("Credenziali non valide");
         }
@@ -53,7 +45,7 @@ public class UserService {
         return user;
     }
 
-    public User getProfile(int userId) {
+    public User getProfile(int userId) {           
         return userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User non trovato"));
     }
@@ -63,25 +55,24 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User non trovato"));
     }
 
-    public User updateProfile(int userId, String nome, String cognome) {
-        User user = getProfile(userId);
-        user.setNome(nome);
-        user.setCognome(cognome);
-        return userRepository.update(user);
+    public List<User> getAllUsers() {               
+        return userRepository.findAll();
     }
 
-    public String generateJwtToken(User utente) {
-        try {
-            Algorithm algorithm = Algorithm.HMAC256(jwtSecret);
-            return JWT.create()
-                    .withSubject(String.valueOf(utente.getId()))
-                    .withClaim("email", utente.getEmail())
-                    .withClaim("role", utente.isAdmin() ? "ADMIN" : "USER")
-                    .withIssuedAt(Date.from(Instant.now()))
-                    .withExpiresAt(Date.from(Instant.now().plusSeconds(3600)))
-                    .sign(algorithm);
-        } catch (JWTCreationException ex) {
-            throw new IllegalStateException("Errore nella generazione del token JWT", ex);
+    public User updateProfile(int userId, String nome, String email) {  
+        User user = getProfile(userId);
+    
+        if (nome != null && !nome.isBlank()) {
+            user.setNome(nome);
         }
+        if (email != null && !email.isBlank()) {
+            Optional<User> conflict = userRepository.findByEmail(email);
+            if (conflict.isPresent() && conflict.get().getId() != userId) { 
+                throw new IllegalStateException("Email già in uso");
+            }
+            user.setEmail(email);
+        }
+    
+        return userRepository.update(user);
     }
 }
