@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input";
 import { useContextCast } from "@/context/context";
 import { useState } from "react";
 import { Link } from "react-router";
-import { useNavigate } from "react-router";
 import z from "zod";
 
 const createUserFormSchema = z
@@ -38,14 +37,9 @@ const createUserFormSchema = z
     path: ["confirmPassword"],
   });
 
-export function SignupForm({
-  onSwitchToLogin,
-}: {
-  onSwitchToLogin?: () => void;
-}) {
+export function SignupForm() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const navigate = useNavigate();
   const { createUser } = useContextCast();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

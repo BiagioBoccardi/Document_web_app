@@ -1,10 +1,13 @@
 
 import React, { useContext, useState, createContext } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 // L'API gateway è esposto sulla porta 8080, che instrada al servizio corretto.
 const API_URL = "http://127.0.0.1:8081";
+
+const DEV_AUTH_BYPASS = true;
+
 
 interface User {
   id: number;
@@ -29,6 +32,14 @@ export const ContextProvider = ({
   children: React.ReactNode;
 }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    if (DEV_AUTH_BYPASS) return {
+      id: 0,
+      nome: "Developer",
+      email:"dev@local",
+      passwordHash:""
+    }
+
+
     try {
       const stored = localStorage.getItem("currentUser");
       if (!stored || stored === "undefined") return null;
