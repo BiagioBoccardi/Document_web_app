@@ -1,4 +1,3 @@
-import type { Hash } from "crypto";
 
 export interface IUser {
     id: number;
