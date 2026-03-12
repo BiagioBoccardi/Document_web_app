@@ -44,10 +44,9 @@ public class DocumentServiceApplication {
 
         DocumentHttpErrorHandler.register(app);
 
-        app.before("/api/v1/documents*", documentAuthMiddleware::authenticate);
-
         app.get("/health", context -> context.json(Map.of("status", "UP", "service", "document-service")));
-        documentController.registerRoutes(app);
+        
+        documentController.registerRoutes(app, documentAuthMiddleware);
 
         app.events(eventConfig -> eventConfig.serverStopped(documentRepository::close));
 

@@ -1,18 +1,14 @@
 package com.example;
 
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
-/**
- * Unit test for simple App.
- */
-public class AppTest {
+class AppTest {
 
-    /**
-     * Rigorous Test :-)
-     */
     @Test
-    public void shouldAnswerWithTrue() {
-        assertTrue(true);
+    void appMainClassExists() {
+        // Verifica che la classe App sia istanziabile senza errori di caricamento
+        assertThatCode(() -> Class.forName("com.example.App"))
+                .doesNotThrowAnyException();
     }
 }

@@ -2,7 +2,9 @@ import React, { useContext, useState, createContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 // L'API gateway è esposto sulla porta 8080, che instrada al servizio corretto.
-const API_URL = "http://127.0.0.1:8080";
+const API_URL = "http://127.0.0.1:8081";
+
+
 
 interface User {
   id: number;
@@ -25,7 +27,19 @@ export const ContextProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+
+
+
+    try {
+      const stored = localStorage.getItem("currentUser");
+      if (!stored || stored === "undefined") return null;
+      return JSON.parse(stored);
+    } catch {
+      localStorage.removeItem("currentUser");
+      return null;
+    }
+  });
   const navigate = useNavigate();
   const location = useLocation();
 

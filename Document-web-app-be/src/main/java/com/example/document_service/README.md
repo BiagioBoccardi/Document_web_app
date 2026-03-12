@@ -28,7 +28,7 @@ Nel `pom.xml`:
     <artifactId>tess4j</artifactId>
     <version>5.5.0</version>
 </dependency>
-
+```
 ## 1) Prerequisiti macchina
 
 - Docker Desktop (consigliato), oppure MongoDB locale installato
