@@ -80,11 +80,25 @@ services:
       context: ./Document-web-app-be
     container_name: notification_service
     environment:
-      SERVICE_TYPE: "NOTIFICATION_SERVICE"
+      - SERVICE_TYPE=NOTIFICATION_SERVICE
+      - PORT=8080
+      # Configurazione Database 
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_NAME=notifications_db
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASS=${POSTGRES_PASSWORD}
+      # Configurazione Message Broker 
+      - RABBITMQ_HOST=rabbitmq
     ports:
       - "8084:8080"
     depends_on:
-      - rabbitmq
+      postgres_db:
+        condition: service_healthy
+      rabbitmq_broker:
+        condition: service_healthy
+    networks:
+      - app-network
 
   # --- FRONTEND ---
   frontend:

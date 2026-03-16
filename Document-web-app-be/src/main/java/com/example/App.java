@@ -10,7 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 public class App {
 
     public static void main(String[] args) {
-        String serviceType = System.getenv("SERVICE_TYPE");
+        String serviceType = System.getenv().getOrDefault("SERVICE_TYPE", "NONE");
+        int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
 
         if (serviceType == null) {
             log.error("ERRORE: Variabile d'ambiente SERVICE_TYPE non impostata!");
@@ -21,7 +22,7 @@ public class App {
 
         switch (serviceType) {
             case "USER_SERVICE"         -> startUserService();
-            case "NOTIFICATION_SERVICE" -> startNotificationService();
+            case "NOTIFICATION_SERVICE" -> startNotificationService(port);
             case "SEARCH_SERVICE"       -> startSearchService();
             case "DOCUMENT_SERVICE"     -> startDocumentService();
             default -> {
@@ -36,10 +37,10 @@ public class App {
         UserServiceApplication.start();
     }
 
-    private static void startNotificationService() {
+    private static void startNotificationService(int port) {
         log.info("Inizializzazione Notification Service su RabbitMQ...");
         NotificationServiceApplication notificationApp = new NotificationServiceApplication();
-        // notificationApp.start(); 
+        notificationApp.start(port); 
     }
 
     private static void startSearchService() {
