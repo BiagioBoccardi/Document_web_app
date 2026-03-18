@@ -127,7 +127,7 @@
             <version>3.0.0</version>
         </dependency>
 
-        <!-- ===== GRPC ===== -->
+        <!-- ===== GRPC / PROTOBUF ===== -->
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
