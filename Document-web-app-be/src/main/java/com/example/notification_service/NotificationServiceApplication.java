@@ -11,6 +11,7 @@ import io.javalin.Javalin;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.path;
+import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 import io.javalin.http.HttpStatus;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,11 @@ public class NotificationServiceApplication {
 
         // Configurazione Javalin
         this.app = Javalin.create(config -> {
+            // Configurazione CORS specifica per il frontend React
+            config.plugins.enableCors(cors -> {
+                cors.add(it -> it.allowHost("http://localhost:5173", "http://localhost"));
+            });
+            
             config.requestLogger.http((ctx, ms) -> {
                 log.info("{} {} - status: {} in {}ms", ctx.method(), ctx.path(), ctx.status(), ms);
             });
@@ -60,7 +66,8 @@ public class NotificationServiceApplication {
 
         app.routes(() -> {
             path("/api/v1/notifications", () -> {
-                get(notificationController::listNotifications);    
+                get(notificationController::listNotifications);   
+                post(notificationController::createNotification);
                 put("/{id}/read", notificationController::markAsRead);   
                 delete("/{id}", notificationController::deleteNotification); 
             });
@@ -68,7 +75,7 @@ public class NotificationServiceApplication {
     }
 
     public void start(int port) {
-        log.info("Avvio Notification Service...");
+        log.info("Inizializzazione Notification Service sulla porta {}...", port);
         
         // Inizializza Hibernate
         HibernateUtil.getSessionFactory();
@@ -77,12 +84,17 @@ public class NotificationServiceApplication {
         eventConsumer.startListening();
 
         app.start(port);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Chiusura in corso del Notification Service...");
+            this.stop();
+        }));
     }
 
     public void stop() {
-        log.info("Spegnimento servizio...");
         eventConsumer.stopListening();
         app.stop();
         HibernateUtil.shutdown();
+        log.info("Notification Service arrestato correttamente.");
     }
 }

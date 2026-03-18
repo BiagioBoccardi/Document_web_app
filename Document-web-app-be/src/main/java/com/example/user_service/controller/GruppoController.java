@@ -22,12 +22,12 @@ public class GruppoController {
     }
 
     public void registerRoutes(Javalin app) {
-        app.post("/api/gruppi", this::createGruppo);
-        app.get("/api/gruppi", this::getAllGruppi);
-        app.get("/api/gruppi/{id}", this::getGruppoById);
-        app.delete("/api/gruppi/{id}", this::deleteGruppo);
-        app.post("/api/gruppi/{id}/membri", this::addMembro);
-        app.delete("/api/gruppi/{id}/membri", this::removeMembro);
+        app.post("/api/v1/gruppi", this::createGruppo);
+        app.get("/api/v1/gruppi", this::getAllGruppi);
+        app.get("/api/v1/gruppi/{id}", this::getGruppoById);
+        app.delete("/api/v1/gruppi/{id}", this::deleteGruppo);
+        app.post("/api/v1/gruppi/{id}/membri", this::addMembro);
+        app.delete("/api/v1/gruppi/{id}/membri", this::removeMembro);
     }
 
     // POST /api/gruppi

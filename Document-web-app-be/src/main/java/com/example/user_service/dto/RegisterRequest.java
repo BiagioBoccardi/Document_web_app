@@ -11,4 +11,5 @@ public class RegisterRequest {
     public String nome;
     public String email;
     public String passwordHash;
+    public boolean isAdmin;
 }

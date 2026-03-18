@@ -21,31 +21,29 @@ public class EventConsumer {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String QUEUE_NAME = "notification_queue";
     
+    private Connection connection;
+    private Channel channel;
 
     public void startListening() {
-        // Se RabbitMQ non è disponibile, puoi loggare uno stub e saltare la connessione
         try {
             ConnectionFactory factory = new ConnectionFactory();
-            // Carica configurazione via ENV
             factory.setHost(System.getenv().getOrDefault("RABBITMQ_HOST", "localhost"));
             
-            Connection connection = factory.newConnection();
-            Channel channel = connection.createChannel();
+            this.connection = factory.newConnection();
+            this.channel = connection.createChannel();
 
-            // Dichiarazione coda e binding (semplificato)
             channel.queueDeclare(QUEUE_NAME, true, false, false, null);
-            log.info("In attesa di eventi sulla coda: {}", QUEUE_NAME);
+            log.info("Ricezione eventi attiva sulla coda: {}", QUEUE_NAME);
 
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
                 String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                 try {
                     GenericEvent event = objectMapper.readValue(message, GenericEvent.class);
                     processEvent(event);
-                    // Conferma ricezione (Ack) per garantire resilienza
                     channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } catch (Exception e) {
-                    log.error("Errore nel processing dell'evento: {}", message, e);
-                    // In caso di errore, il messaggio può finire in una DLQ o essere ritentato
+                    log.error("Errore elaborazione evento: {}", message, e);
+                    // In caso di errore, non confermiamo (requeue = true per riprovare)
                     channel.basicNack(delivery.getEnvelope().getDeliveryTag(), false, true);
                 }
             };
@@ -53,34 +51,30 @@ public class EventConsumer {
             channel.basicConsume(QUEUE_NAME, false, deliverCallback, consumerTag -> {});
 
         } catch (Exception e) {
-            log.warn("Impossibile connettersi a RabbitMQ. Il servizio funzionerà solo via API. Errore: {}", e.getMessage());
+            log.warn("RabbitMQ non raggiungibile. Notifiche via eventi disabilitate: {}", e.getMessage());
         }
     }
 
     private void processEvent(GenericEvent event) {
-        log.info("Ricevuto evento di tipo: {}", event.getType());
+        log.info("Processing evento: {}", event.getType());
+        
+        // Il TemplateService genera già il messaggio completo usando i metadata
         String message = templateService.generateMessage(event.getType(), event.getMetadata());
 
-        switch (event.getType()) {
-            case "user.registered":
-                notificationService.createNotification(event.getUserId(), message); 
-                break;
-                
-            case "document.uploaded":
-                String fileName = (String) event.getMetadata().getOrDefault("fileName", "documento");
-                notificationService.createNotification(event.getUserId(), message + fileName); 
-                break;
-                
-            case "search.completed":
-                notificationService.createNotification(event.getUserId(), message); 
-                break;
-
-            default:
-                log.warn("Tipo evento sconosciuto: {}", event.getType());
+        // Ora la logica è centralizzata: il service crea la notifica indipendentemente dal tipo
+        if (message != null) {
+            notificationService.createNotification(event.getUserId(), message);
+            log.debug("Notifica persistita per l'evento {}", event.getType());
         }
     }
 
     public void stopListening() {
-        // Stub implementation for stopping RabbitMQ event consumption
+        log.info("Chiusura connessioni RabbitMQ...");
+        try {
+            if (channel != null && channel.isOpen()) channel.close();
+            if (connection != null && connection.isOpen()) connection.close();
+        } catch (Exception e) {
+            log.error("Errore durante la chiusura di RabbitMQ", e);
+        }
     }
 }

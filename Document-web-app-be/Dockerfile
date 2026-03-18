@@ -23,7 +23,7 @@ WORKDIR /Document-web-app-be
 
 # Copia il file JAR generato dalla fase di build
 # Nota: assicurati che il nome del file JAR corrisponda a quello definito nel tuo pom.xml
-COPY --from=build /Document-web-app-be/target/*.jar app.jar
+COPY --from=build /Document-web-app-be/target/app.jar app.jar
 
 # Espone la porta su cui gira la tua applicazione (es. 8080)
 EXPOSE 8080

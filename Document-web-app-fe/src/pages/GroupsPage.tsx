@@ -2,54 +2,19 @@ import { useEffect, useState } from "react";
 import { useContextCast } from "@/context/context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import {
-  Users,
-  Plus,
-  Trash2,
-  UserPlus,
-  UserMinus,
-  Crown,
-  ChevronDown,
-  ChevronUp,
-  Search,
-} from "lucide-react";
+import { Users, Plus, Trash2, UserPlus, UserMinus, Crown, ChevronDown, ChevronUp, Search } from "lucide-react";
 
-const API_URL = "http://127.0.0.1:8081";
-
-interface User {
-  id: number;
-  nome: string;
-  email: string;
-}
-
-interface Gruppo {
-  id: number;
-  name: string;
-  owner: User;
-  membri: User[];
-}
 
 export function GroupsPage() {
-  const { currentUser } = useContextCast();
-
-  const [gruppi, setGruppi] = useState<Gruppo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+  const { currentUser, gruppi, users, loadingGruppi, fetchGruppi, fetchUsers, createGroup, deleteGroup, addMembersToGroup, removeMemberFromGroup } = useContextCast();
 
   // Create group dialog
   const [createOpen, setCreateOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
 
   // Add member dialog
   const [addMemberOpen, setAddMemberOpen] = useState(false);
@@ -59,42 +24,13 @@ export function GroupsPage() {
 
   // Search
   const [search, setSearch] = useState("");
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   // ── fetch all groups ──────────────────────────────────────────────────────
-  const fetchGruppi = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/gruppi`);
-      if (!res.ok) throw new Error();
-      const data: Gruppo[] = await res.json();
-      setGruppi(data);
-    } catch {
-      toast.error("Impossibile caricare i gruppi.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Moved to context
 
-  const fetchUsers = async () => {
-    // Genero 10 utenti 
-    const testUsers: User[] = Array.from({ length: 10 }, (_, i) => ({
-      id: 99900 + i,
-      nome: `Utente  ${i + 1}`,
-      email: `prova${i + 1}@test.com`
-    }));
-
-    try {
-      const res = await fetch(`${API_URL}/api/users`);
-      if (res.ok) {
-        const data = await res.json();
-        setUsers([...data, ...testUsers]);
-      } else {
-        setUsers(testUsers);
-      }
-    } catch {
-      console.error("Errore nel caricamento utenti");
-      setUsers(testUsers);
-    }
-  };
+  // ── fetch users ───────────────────────────────────────────────────────────
+  // Moved to context
 
   useEffect(() => {
     fetchGruppi();
@@ -106,45 +42,18 @@ export function GroupsPage() {
     if (!newGroupName.trim() || !currentUser) return;
     setCreating(true);
     try {
-      const res = await fetch(`${API_URL}/api/gruppi`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newGroupName.trim(),
-          owner: { id: currentUser.id }
-        }),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Errore server ${res.status}: ${errText}`);
-      }
-
-      const newGroup: Gruppo = await res.json();
-
-      // Aggiungi i membri selezionati
-      if (selectedUserIds.length > 0 && newGroup?.id) {
-        await Promise.all(selectedUserIds.map(uid =>
-          fetch(`${API_URL}/api/gruppi/${newGroup.id}/membri`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: uid }),
-          })
-        ));
-      }
-
+      await createGroup(newGroupName.trim(), currentUser.id, selectedUserIds);
       toast.success(`Gruppo "${newGroupName.trim()}" creato!`);
       setCreateOpen(false);
       setNewGroupName("");
       setSelectedUserIds([]);
-      await fetchGruppi();
-    } catch (e: any) {
+    } catch (e) {
       console.error("Create group error:", e);
 
-      if (e.message === "Failed to fetch") {
+      if (e instanceof Error && e.message === "Failed to fetch") {
         toast.error("Errore di connessione. Controlla che il server backend sia acceso.");
       } else {
-        toast.error(e.message || "Errore durante la creazione del gruppo.");
+        toast.error((e instanceof Error ? e.message : null) || "Errore durante la creazione del gruppo.");
       }
     } finally {
       setCreating(false);
@@ -154,10 +63,8 @@ export function GroupsPage() {
   // ── delete group ──────────────────────────────────────────────────────────
   const handleDelete = async (id: number) => {
     try {
-      const res = await fetch(`${API_URL}/api/gruppi/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
+      await deleteGroup(id);
       toast.success("Gruppo eliminato.");
-      await fetchGruppi();
     } catch {
       toast.error("Errore durante l'eliminazione.");
     }
@@ -168,17 +75,10 @@ export function GroupsPage() {
     if (!addMemberGruppoId || addMemberUserIds.length === 0) return;
     setAddingMember(true);
     try {
-      await Promise.all(addMemberUserIds.map(uid =>
-        fetch(`${API_URL}/api/gruppi/${addMemberGruppoId}/membri`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: uid }),
-        })
-      ));
+      await addMembersToGroup(addMemberGruppoId, addMemberUserIds);
       toast.success("Membri aggiunti!");
       setAddMemberOpen(false);
       setAddMemberUserIds([]);
-      await fetchGruppi();
     } catch {
       toast.error("Errore durante l'aggiunta del membro.");
     } finally {
@@ -189,17 +89,14 @@ export function GroupsPage() {
   // ── remove member ─────────────────────────────────────────────────────────
   const handleRemoveMember = async (gruppoId: number, userId: number) => {
     try {
-      const res = await fetch(`${API_URL}/api/gruppi/${gruppoId}/membri`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-      if (res.status === 409) { toast.error("Non puoi rimuovere il proprietario."); return; }
-      if (!res.ok) throw new Error();
+      await removeMemberFromGroup(gruppoId, userId);
       toast.success("Membro rimosso.");
-      await fetchGruppi();
-    } catch {
-      toast.error("Errore durante la rimozione.");
+    } catch (e) {
+      if (e instanceof Error && e.message === "Non puoi rimuovere il proprietario.") {
+        toast.error("Non puoi rimuovere il proprietario.");
+      } else {
+        toast.error("Errore durante la rimozione.");
+      }
     }
   };
 
@@ -249,7 +146,7 @@ export function GroupsPage() {
         </div>
 
         {/* List */}
-        {loading ? (
+        {loadingGruppi ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-16 rounded-lg border border-border bg-accent/30 animate-pulse" />

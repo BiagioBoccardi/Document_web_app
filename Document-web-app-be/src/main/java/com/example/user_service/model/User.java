@@ -33,6 +33,6 @@
         @JsonIgnore
         private String passwordHash;
 
-        @Column(name = "isadmin", nullable = false)
+        @Column(name = "is_admin", nullable = false)
         private boolean isAdmin;
     }

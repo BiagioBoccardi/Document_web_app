@@ -1,5 +1,6 @@
 package com.example.user_service;
 
+import com.example.user_service.config.HibernateUtil;
 import com.example.user_service.controller.GruppoController;
 import com.example.user_service.controller.UserController;
 import com.example.user_service.repository.GruppoRepository;
@@ -8,9 +9,9 @@ import com.example.user_service.service.GruppoService;
 import com.example.user_service.service.UserService;
 
 import io.javalin.Javalin;
-import jakarta.persistence.EntityManagerFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.cfg.Configuration;
+
+import org.hibernate.SessionFactory;
 
 @Slf4j
 public class UserServiceApplication {
@@ -20,16 +21,19 @@ public class UserServiceApplication {
     private UserServiceApplication() {}
 
     public static void start() {
-        int port = readPort();
+        start(readPort());
+    }
+
+    public static void start(int port) {
+        log.info("Inizializzazione User Service sulla porta {}...", port);
 
         // --- Hibernate ---
-        EntityManagerFactory entityManagerFactory = new Configuration()
-                .configure("META-INF/user.hibernate.cfg.xml")
-                .buildSessionFactory();
+        // Usiamo l'utility invece di creare la configurazione qui a mano
+        SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
 
         // --- Repository ---
-        UserRepository userRepository = new UserRepository(entityManagerFactory);
-        GruppoRepository gruppoRepository = new GruppoRepository(entityManagerFactory);
+        UserRepository userRepository = new UserRepository(sessionFactory);
+        GruppoRepository gruppoRepository = new GruppoRepository(sessionFactory);
 
         // --- Service ---
         UserService userService = new UserService(userRepository);
@@ -42,7 +46,7 @@ public class UserServiceApplication {
         // --- Javalin 5x ---
         Javalin app = Javalin.create(config -> {
             config.plugins.enableCors(cors -> {
-                cors.add(rule -> rule.anyHost());
+                cors.add(it -> it.allowHost("http://localhost:5173", "http://localhost"));
             });
         }).start(port);
 
@@ -54,8 +58,9 @@ public class UserServiceApplication {
 
         // --- Shutdown hook ---
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Spegnimento User Service...");
             app.stop();
-            entityManagerFactory.close();
+            HibernateUtil.shutdown();
         }));
     }
 

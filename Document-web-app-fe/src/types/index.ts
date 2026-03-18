@@ -6,3 +6,19 @@ export interface IUser {
     passwordHash: string;
     isAdmin: boolean;
 }
+
+export interface IGruppo {
+    id: number;
+    name: string;
+    owner: IUser;
+    membri: IUser[];
+}
+
+export interface INotification {
+  uuid: string;
+  messaggio: string;
+  userId: number;
+  stato: 'PENDING' | 'SENT' | 'READ' | 'FAILED';
+  createdAt: string;
+  readAt?: string;
+}
