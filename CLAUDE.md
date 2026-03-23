@@ -1,6 +1,6 @@
 # 🤖 Istruzioni Agente: Search Service (Microservizio 3)
 
-**Ultimo aggiornamento:** 2 marzo 2026
+**Ultimo aggiornamento:** 23 marzo 2026
 
 ## 🎯 Obiettivo e Perimetro
 
@@ -53,14 +53,14 @@ Il focus esclusivo di questo progetto è lo sviluppo del **Microservizio 3 - Sea
 - [x] **SS-BE-02:** Setup Collezione Qdrant (startup init, schema, cosine distance). _(Alta)_
 - [x] **SS-BE-03:** Middleware JWT per protezione endpoint `search`/`similar`. _(Alta)_
 - [X] **SS-BE-04:** Astrazione provider embedding (Adapter pattern con fallback). _(Alta)_
-- [ ] **SS-BE-05:** Endpoint `POST /api/v1/embeddings`. _(Alta)_
-- [ ] **SS-BE-09:** Consumer `document.uploaded` (indicizzazione automatica). _(Alta)_
-- [ ] **SS-BE-06:** Endpoint `POST /api/v1/search` (embedding query, ricerca, ranking). _(Alta)_
-- [ ] **SS-BE-07:** Implementazione filtro `userId` nei risultati Qdrant. _(Alta)_
-- [ ] **SS-BE-08:** Endpoint `GET /api/v1/search/similar/{documentId}`. _(Alta)_
-- [ ] **SS-BE-10:** Consumer `document.updated` (reindicizzazione). _(Alta)_
-- [ ] **SS-BE-11:** Consumer `document.deleted` (pulizia vettore). _(Alta)_
-- [ ] **SS-BE-13:** Standardizzazione error handling API. _(Alta)_
+- [x ] **SS-BE-05:** Endpoint `POST /api/v1/embeddings`. _(Alta)_
+- [ x ] **SS-BE-09:** Consumer `document.uploaded` (indicizzazione automatica). _(Alta)_
+- [x] **SS-BE-06:** Endpoint `POST /api/v1/search` (embedding query, ricerca, ranking). _(Alta)_
+- [x] **SS-BE-07:** Implementazione filtro `userId` nei risultati Qdrant. _(Alta)_
+- [x] **SS-BE-08:** Endpoint `GET /api/v1/search/similar/{documentId}`. _(Alta)_
+- [x] **SS-BE-10:** Consumer `document.updated` (reindicizzazione). _(Alta)_
+- [x] **SS-BE-11:** Consumer `document.deleted` (pulizia vettore). _(Alta)_
+- [x] **SS-BE-13:** Standardizzazione error handling API. _(Alta)_
 - [ ] **SS-BE-16:** Unit/Integration Test (Qdrant mock, endpoint, consumer). _(Alta)_
 - [ ] **SS-BE-14:** Resilienza eventi (deduplica, retry, backoff). _(Media)_
 - [ ] **SS-BE-15:** Performance tuning (topK, caching query brevi). _(Media)_
