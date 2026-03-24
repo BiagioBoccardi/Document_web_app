@@ -11,7 +11,7 @@ export interface IGruppo {
     id: number;
     name: string;
     owner: IUser;
-    membri: IUser[];
+    members: IUser[];
 }
 
 export interface INotification {

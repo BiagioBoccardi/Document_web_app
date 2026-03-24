@@ -25,6 +25,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @Tag("unit")
@@ -69,7 +74,7 @@ class GruppoControllerTest {
         g.setId(id);
         g.setName(nome);
         g.setOwner(owner);
-        g.setMembri(new ArrayList<>(List.of(owner)));
+        g.setMembers(new ArrayList<>(List.of(owner)));
         return g;
     }
 
@@ -101,7 +106,7 @@ class GruppoControllerTest {
     // POST /api/gruppi  →  createGruppo()
     // ═════════════════════════════════════════════
     @Nested
-    @DisplayName("POST /api/gruppi")
+    @DisplayName("POST /api/v1/gruppi")
     class CreateGruppo {
 
         @Test
@@ -110,10 +115,10 @@ class GruppoControllerTest {
             User owner = buildUser(1, "Mario", "mario@example.com");
             Gruppo gruppo = buildGruppo(1, "Team Alpha", owner);
             CreateGruppoRequest req = buildCreateRequest("Team Alpha", 1);
+            req.members = List.of();
 
             when(ctx.bodyAsClass(CreateGruppoRequest.class)).thenReturn(req);
-            when(userService.getProfile(1)).thenReturn(owner);
-            when(gruppoService.createGruppo("Team Alpha", owner)).thenReturn(gruppo);
+            when(gruppoService.createGruppo(eq("Team Alpha"),eq(1), anyList())).thenReturn(gruppo);
 
             invoke("createGruppo");
 
@@ -130,7 +135,7 @@ class GruppoControllerTest {
             invoke("createGruppo");
 
             verify(ctx).status(HttpStatus.BAD_REQUEST);
-            verify(gruppoService, never()).createGruppo(any(), any());
+            verify(gruppoService, never()).createGruppo(anyString(), anyInt(), anyList());
         }
 
         @Test
@@ -142,21 +147,23 @@ class GruppoControllerTest {
             invoke("createGruppo");
 
             verify(ctx).status(HttpStatus.BAD_REQUEST);
-            verify(gruppoService, never()).createGruppo(any(), any());
+            verify(gruppoService, never()).createGruppo(anyString(), anyInt(), anyList());
         }
 
         @Test
         @DisplayName("404 NOT FOUND: owner inesistente")
         void shouldReturn404WhenOwnerNotFound() {
             CreateGruppoRequest req = buildCreateRequest("Team Alpha", 99);
+            req.members = List.of();
+            
             when(ctx.bodyAsClass(CreateGruppoRequest.class)).thenReturn(req);
-            when(userService.getProfile(99))
-                    .thenThrow(new IllegalArgumentException("User non trovato"));
+            
+            when(gruppoService.createGruppo(eq("Team Alpha"), eq(99), anyList()))
+                    .thenThrow(new IllegalArgumentException("Owner non trovato"));
 
             invoke("createGruppo");
 
             verify(ctx).status(HttpStatus.NOT_FOUND);
-            verify(gruppoService, never()).createGruppo(any(), any());
         }
     }
 
@@ -164,7 +171,7 @@ class GruppoControllerTest {
     // GET /api/gruppi  →  getAllGruppi()
     // ═════════════════════════════════════════════
     @Nested
-    @DisplayName("GET /api/gruppi")
+    @DisplayName("GET /api/v1/gruppi")
     class GetAllGruppi {
 
         @Test
@@ -199,7 +206,7 @@ class GruppoControllerTest {
     // GET /api/gruppi/{id}  →  getGruppoById()
     // ═════════════════════════════════════════════
     @Nested
-    @DisplayName("GET /api/gruppi/{id}")
+    @DisplayName("GET /api/v1/gruppi/{id}")
     class GetGruppoById {
 
         @Test
@@ -245,7 +252,7 @@ class GruppoControllerTest {
     // DELETE /api/gruppi/{id}  →  deleteGruppo()
     // ═════════════════════════════════════════════
     @Nested
-    @DisplayName("DELETE /api/gruppi/{id}")
+    @DisplayName("DELETE /api/v1/gruppi/{id}")
     class DeleteGruppo {
 
         @Test
@@ -287,22 +294,19 @@ class GruppoControllerTest {
     // POST /api/gruppi/{id}/membri  →  addMembro()
     // ═════════════════════════════════════════════
     @Nested
-    @DisplayName("POST /api/gruppi/{id}/membri")
+    @DisplayName("POST /api/v1/gruppi/{id}/membri")
     class AddMembro {
 
         @Test
         @DisplayName("200 OK: membro aggiunto con successo")
         void shouldReturn200WhenMembroIsAdded() {
             User owner = buildUser(1, "Mario", "mario@example.com");
-            User newMember = buildUser(2, "Luigi", "luigi@example.com");
             Gruppo gruppo = buildGruppo(1, "Team Alpha", owner);
-            gruppo.getMembri().add(newMember);
             MembroRequest req = buildMembroRequest(2);
 
             when(ctx.pathParam("id")).thenReturn("1");
             when(ctx.bodyAsClass(MembroRequest.class)).thenReturn(req);
-            when(userService.getProfile(2)).thenReturn(newMember);
-            when(gruppoService.addMembro(1, newMember)).thenReturn(gruppo);
+            when(gruppoService.addMembro(1, 2)).thenReturn(gruppo);
 
             invoke("addMembro");
 
@@ -314,27 +318,26 @@ class GruppoControllerTest {
         @DisplayName("404 NOT FOUND: utente inesistente")
         void shouldReturn404WhenUserNotFound() {
             MembroRequest req = buildMembroRequest(99);
+
             when(ctx.pathParam("id")).thenReturn("1");
             when(ctx.bodyAsClass(MembroRequest.class)).thenReturn(req);
-            when(userService.getProfile(99))
-                    .thenThrow(new IllegalArgumentException("User non trovato"));
+            when(gruppoService.addMembro(1, 99))
+                    .thenThrow(new IllegalArgumentException("Utente non trovato"));
 
             invoke("addMembro");
 
             verify(ctx).status(HttpStatus.NOT_FOUND);
-            verify(gruppoService, never()).addMembro(anyInt(), any());
+            verify(gruppoService).addMembro(1, 99);
         }
 
         @Test
         @DisplayName("404 NOT FOUND: gruppo inesistente")
         void shouldReturn404WhenGruppoNotFound() {
-            User user = buildUser(2, "Luigi", "luigi@example.com");
             MembroRequest req = buildMembroRequest(2);
 
             when(ctx.pathParam("id")).thenReturn("99");
             when(ctx.bodyAsClass(MembroRequest.class)).thenReturn(req);
-            when(userService.getProfile(2)).thenReturn(user);
-            when(gruppoService.addMembro(99, user))
+            when(gruppoService.addMembro(99, 2))
                     .thenThrow(new IllegalArgumentException("Gruppo non trovato"));
 
             invoke("addMembro");
@@ -345,13 +348,11 @@ class GruppoControllerTest {
         @Test
         @DisplayName("409 CONFLICT: utente già membro del gruppo")
         void shouldReturn409WhenAlreadyMember() {
-            User owner = buildUser(1, "Mario", "mario@example.com");
             MembroRequest req = buildMembroRequest(1);
 
             when(ctx.pathParam("id")).thenReturn("1");
             when(ctx.bodyAsClass(MembroRequest.class)).thenReturn(req);
-            when(userService.getProfile(1)).thenReturn(owner);
-            when(gruppoService.addMembro(1, owner))
+            when(gruppoService.addMembro(1, 1))
                     .thenThrow(new IllegalStateException("Utente già membro del gruppo"));
 
             invoke("addMembro");
@@ -367,7 +368,7 @@ class GruppoControllerTest {
             invoke("addMembro");
 
             verify(ctx).status(HttpStatus.BAD_REQUEST);
-            verify(gruppoService, never()).addMembro(anyInt(), any());
+            verify(gruppoService, never()).addMembro(anyInt(), anyInt());
         }
     }
 
@@ -375,7 +376,7 @@ class GruppoControllerTest {
     // DELETE /api/gruppi/{id}/membri  →  removeMembro()
     // ═════════════════════════════════════════════
     @Nested
-    @DisplayName("DELETE /api/gruppi/{id}/membri")
+    @DisplayName("DELETE /api/v1/gruppi/{id}/membri")
     class RemoveMembro {
 
         @Test
@@ -389,7 +390,7 @@ class GruppoControllerTest {
             when(ctx.pathParam("id")).thenReturn("1");
             when(ctx.bodyAsClass(MembroRequest.class)).thenReturn(req);
             when(userService.getProfile(2)).thenReturn(member);
-            when(gruppoService.removeMembro(1, member)).thenReturn(gruppo);
+            when(gruppoService.removeMembro(1, 2)).thenReturn(gruppo);
 
             invoke("removeMembro");
 
@@ -401,15 +402,16 @@ class GruppoControllerTest {
         @DisplayName("404 NOT FOUND: utente inesistente")
         void shouldReturn404WhenUserNotFound() {
             MembroRequest req = buildMembroRequest(99);
+            
             when(ctx.pathParam("id")).thenReturn("1");
             when(ctx.bodyAsClass(MembroRequest.class)).thenReturn(req);
-            when(userService.getProfile(99))
+            when(gruppoService.removeMembro(1, 99))
                     .thenThrow(new IllegalArgumentException("User non trovato"));
 
             invoke("removeMembro");
 
             verify(ctx).status(HttpStatus.NOT_FOUND);
-            verify(gruppoService, never()).removeMembro(anyInt(), any());
+            verify(gruppoService).removeMembro(1, 99);
         }
 
         @Test
@@ -421,7 +423,7 @@ class GruppoControllerTest {
             when(ctx.pathParam("id")).thenReturn("99");
             when(ctx.bodyAsClass(MembroRequest.class)).thenReturn(req);
             when(userService.getProfile(2)).thenReturn(user);
-            when(gruppoService.removeMembro(99, user))
+            when(gruppoService.removeMembro(99, 2))
                     .thenThrow(new IllegalArgumentException("Gruppo non trovato"));
 
             invoke("removeMembro");
@@ -438,7 +440,7 @@ class GruppoControllerTest {
             when(ctx.pathParam("id")).thenReturn("1");
             when(ctx.bodyAsClass(MembroRequest.class)).thenReturn(req);
             when(userService.getProfile(1)).thenReturn(owner);
-            when(gruppoService.removeMembro(1, owner))
+            when(gruppoService.removeMembro(1, 1))
                     .thenThrow(new IllegalStateException("Non puoi rimuovere il proprietario dal gruppo"));
 
             invoke("removeMembro");
@@ -454,7 +456,7 @@ class GruppoControllerTest {
             invoke("removeMembro");
 
             verify(ctx).status(HttpStatus.BAD_REQUEST);
-            verify(gruppoService, never()).removeMembro(anyInt(), any());
+            verify(gruppoService, never()).removeMembro(anyInt(), anyInt());
         }
     }
 }

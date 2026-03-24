@@ -1,24 +1,24 @@
 package com.example.user_service.controller;
 
+import java.util.Map;
+
 import com.example.user_service.dto.CreateGruppoRequest;
 import com.example.user_service.dto.MembroRequest;
 import com.example.user_service.model.Gruppo;
-import com.example.user_service.model.User;
 import com.example.user_service.service.GruppoService;
-import com.example.user_service.service.UserService;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class GruppoController {
 
     private final GruppoService gruppoService;
-    private final UserService userService;
 
-    public GruppoController(GruppoService gruppoService, UserService userService) {
+    public GruppoController(GruppoService gruppoService) {
         this.gruppoService = gruppoService;
-        this.userService = userService;
     }
 
     public void registerRoutes(Javalin app) {
@@ -35,16 +35,16 @@ public class GruppoController {
         CreateGruppoRequest body = ctx.bodyAsClass(CreateGruppoRequest.class);
 
         if (body.name == null || body.name.isBlank() ) {
-            ctx.status(HttpStatus.BAD_REQUEST);
+            ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "Nome gruppo obbligatorio"));
             return;
         }
 
         try {
-            User owner = userService.getProfile(body.ownerId);
-            Gruppo gruppo = gruppoService.createGruppo(body.name, owner);
+            Gruppo gruppo = gruppoService.createGruppo(body.name, body.ownerId, body.members);
             ctx.status(HttpStatus.CREATED).json(gruppo);
         } catch (IllegalArgumentException ex) {
-            ctx.status(HttpStatus.NOT_FOUND);
+            ctx.status(HttpStatus.NOT_FOUND).json(java.util.Map.of("Errore: ", ex.getMessage()));
+            log.error(ex.getMessage());
         }
     }
 
@@ -75,6 +75,7 @@ public class GruppoController {
             ctx.status(HttpStatus.NO_CONTENT);
         } catch (IllegalArgumentException ex) {
             ctx.status(HttpStatus.NOT_FOUND);
+            log.error(ex.getMessage());
         }
     }
 
@@ -86,13 +87,15 @@ public class GruppoController {
         MembroRequest body = ctx.bodyAsClass(MembroRequest.class);
 
         try {
-            User user = userService.getProfile(body.userId);
-            Gruppo gruppo = gruppoService.addMembro(gruppoId, user);
+            
+            Gruppo gruppo = gruppoService.addMembro(gruppoId, body.userId);
             ctx.status(HttpStatus.OK).json(gruppo);
         } catch (IllegalArgumentException ex) {
             ctx.status(HttpStatus.NOT_FOUND);
+            log.error(ex.getMessage());
         } catch (IllegalStateException ex) {
             ctx.status(HttpStatus.CONFLICT);
+            log.error(ex.getMessage());
         }
     }
 
@@ -104,13 +107,14 @@ public class GruppoController {
         MembroRequest body = ctx.bodyAsClass(MembroRequest.class);
 
         try {
-            User user = userService.getProfile(body.userId);
-            Gruppo gruppo = gruppoService.removeMembro(gruppoId, user);
+            Gruppo gruppo = gruppoService.removeMembro(gruppoId, body.userId);
             ctx.status(HttpStatus.OK).json(gruppo);
         } catch (IllegalArgumentException ex) {
             ctx.status(HttpStatus.NOT_FOUND);
+            log.error(ex.getMessage());
         } catch (IllegalStateException ex) {
             ctx.status(HttpStatus.CONFLICT);
+            log.error(ex.getMessage());
         }
     }
 
@@ -120,6 +124,7 @@ public class GruppoController {
             return Integer.parseInt(ctx.pathParam("id"));
         } catch (NumberFormatException ex) {
             ctx.status(HttpStatus.BAD_REQUEST);
+            log.error(ex.getMessage());
             return -1;
         }
     }

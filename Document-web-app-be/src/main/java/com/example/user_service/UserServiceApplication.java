@@ -1,5 +1,7 @@
 package com.example.user_service;
 
+import org.hibernate.SessionFactory;
+
 import com.example.user_service.config.HibernateUtil;
 import com.example.user_service.controller.GruppoController;
 import com.example.user_service.controller.UserController;
@@ -10,8 +12,6 @@ import com.example.user_service.service.UserService;
 
 import io.javalin.Javalin;
 import lombok.extern.slf4j.Slf4j;
-
-import org.hibernate.SessionFactory;
 
 @Slf4j
 public class UserServiceApplication {
@@ -37,14 +37,15 @@ public class UserServiceApplication {
 
         // --- Service ---
         UserService userService = new UserService(userRepository);
-        GruppoService gruppoService = new GruppoService(gruppoRepository);
+        GruppoService gruppoService = new GruppoService(gruppoRepository, userRepository);
 
         // --- Controller ---
         UserController userController = new UserController(userService);
-        GruppoController gruppoController = new GruppoController(gruppoService, userService);
+        GruppoController gruppoController = new GruppoController(gruppoService);
 
         // --- Javalin 5x ---
         Javalin app = Javalin.create(config -> {
+            config.routing.ignoreTrailingSlashes = true;
             config.plugins.enableCors(cors -> {
                 cors.add(it -> it.allowHost("http://localhost:5173", "http://localhost"));
             });

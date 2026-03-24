@@ -49,7 +49,7 @@ export const ContextProvider = ({
   });
   const [gruppi, setGruppi] = useState<IGruppo[]>([]);
   const [users, setUsers] = useState<IUser[]>([]);
-  const [loadingGruppi, setLoadingGruppi] = useState(true);
+  const [loadingGruppi, setLoadingGruppi] = useState(false);
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const unreadCount = notifications.filter(n => n.stato !== 'READ').length;
@@ -120,8 +120,12 @@ export const ContextProvider = ({
   };
 
   const fetchGruppi = useCallback(async () => {
-    if (!currentUser || loadingGruppi) return;
+    if (!currentUser) {
+      setLoadingGruppi(false);
+      return;
+    }
 
+    if (loadingGruppi) return;
     setLoadingGruppi(true);
     try {
       const res = await fetch(`${API_URL}/api/v1/gruppi`, {
@@ -129,15 +133,21 @@ export const ContextProvider = ({
           "X-User-ID": currentUser.id.toString()
         }
       });
-      if (!res.ok) throw new Error();
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error("Errore nel recupero gruppi: " + errorText);
+      }
+
       const data: IGruppo[] = await res.json();
       setGruppi(data);
-    } catch {
+    } catch (e) {
+      console.error("Errore :", e);
       toast.error("Impossibile caricare i gruppi.");
     } finally {
       setLoadingGruppi(false);
     }
-  }, []);
+  }, [currentUser?.id]);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -154,13 +164,14 @@ export const ContextProvider = ({
     }
   }, []);
 
-  const createGroup = async (name: string, ownerId: number, memberIds: number[]) => {
+  const createGroup = async (name: string, ownerId: number, members: number[]) => {
     const res = await fetch(`${API_URL}/api/v1/gruppi`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: name.trim(),
-        owner: { id: ownerId }
+        ownerId: ownerId,
+        members: members
       }),
     });
 
@@ -172,8 +183,8 @@ export const ContextProvider = ({
     const newGroup: IGruppo = await res.json();
 
     // Aggiunge i membri selezionati
-    if (memberIds.length > 0 && newGroup?.id) {
-      await Promise.all(memberIds.map(uid =>
+    if (members.length > 0 && newGroup?.id) {
+      await Promise.all(members.map(uid =>
         fetch(`${API_URL}/api/v1/gruppi/${newGroup.id}/membri`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
