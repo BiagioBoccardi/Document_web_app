@@ -3,6 +3,8 @@ package com.example.user_service.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,6 +25,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor          
 @AllArgsConstructor
 @Entity
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Table(name = "gruppo")
 public class Gruppo {
 
@@ -37,11 +40,11 @@ public class Gruppo {
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE})
     @JoinTable(
         name = "gruppo_membri",
         joinColumns = @JoinColumn(name = "gruppo_id"),
         inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    private List<User> membri = new ArrayList<>();
+    private List<User> members = new ArrayList<>();
 }

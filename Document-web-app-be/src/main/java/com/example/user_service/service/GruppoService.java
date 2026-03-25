@@ -3,23 +3,39 @@ package com.example.user_service.service;
 import com.example.user_service.model.Gruppo;
 import com.example.user_service.model.User;
 import com.example.user_service.repository.GruppoRepository;
+import com.example.user_service.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Optional;
 
+@RequiredArgsConstructor
 public class GruppoService {
 
     private final GruppoRepository gruppoRepository;
+    private final UserRepository userRepository;
 
-    public GruppoService(GruppoRepository gruppoRepository) {
-        this.gruppoRepository = gruppoRepository;
-    }
 
-    public Gruppo createGruppo(String name, User owner) {
+    public Gruppo createGruppo(String name, int ownerId, List<Integer> members) {
+
+        User owner = userRepository.findById(ownerId)
+            .orElseThrow(() -> new IllegalArgumentException("Owner non trovato"));
+
         Gruppo gruppo = new Gruppo();
         gruppo.setName(name);
         gruppo.setOwner(owner);
-        gruppo.getMembri().add(owner);      // ← owner aggiunto come membro
+
+        gruppo.getMembers().add(owner);
+
+        if (members != null) {
+            for (int id : members) {
+                userRepository.findById(id).ifPresent(member -> {
+                    gruppo.getMembers().add(member);
+                });
+            }
+        }
+        
         return gruppoRepository.save(gruppo);
     }
 
@@ -32,37 +48,37 @@ public class GruppoService {
     }
 
     public void deleteGruppo(int id) {
-        // ← verifica esistenza prima di eliminare
         gruppoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Gruppo non trovato"));
         gruppoRepository.delete(id);
     }
 
-    public Gruppo addMembro(int gruppoId, User user) {
+    public Gruppo addMembro(int gruppoId, int userId) {
         Gruppo gruppo = gruppoRepository.findByIdWithDetails(gruppoId)
                 .orElseThrow(() -> new IllegalArgumentException("Gruppo non trovato"));
 
-        // ← controllo duplicati
-        boolean giaPresente = gruppo.getMembri().stream()
-                .anyMatch(m -> m.getId() == user.getId());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Utente non trovato"));
+
+        boolean giaPresente = gruppo.getMembers().stream().anyMatch(m -> m.getId() == userId);
         if (giaPresente) {
             throw new IllegalStateException("Utente già membro del gruppo");
         }
 
-        gruppo.getMembri().add(user);
+        gruppo.getMembers().add(user);
         return gruppoRepository.update(gruppo);
     }
 
-    public Gruppo removeMembro(int gruppoId, User user) {   // ← metodo aggiunto
+    public Gruppo removeMembro(int gruppoId, int userId) {   
         Gruppo gruppo = gruppoRepository.findByIdWithDetails(gruppoId)
                 .orElseThrow(() -> new IllegalArgumentException("Gruppo non trovato"));
 
         // Non si può rimuovere l'owner
-        if (gruppo.getOwner().getId() == user.getId()) {
+        if (gruppo.getOwner().getId() == userId) {
             throw new IllegalStateException("Non puoi rimuovere il proprietario dal gruppo");
         }
 
-        gruppo.getMembri().removeIf(m -> m.getId() == user.getId());
+        gruppo.getMembers().removeIf(m -> m.getId() == userId);
         return gruppoRepository.update(gruppo);
     }
 }

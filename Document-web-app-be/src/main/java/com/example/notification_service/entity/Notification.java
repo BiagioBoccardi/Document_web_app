@@ -24,6 +24,7 @@ public class Notification {
     @Id
     @GeneratedValue
     private UUID uuid;
+
     @Column(nullable = false)
     private String messaggio;
 
@@ -31,20 +32,12 @@ public class Notification {
     private int userId;
 
     @Column( nullable = false)
-    private String stato; // "inviata", "consegnata", "letta", "errore consegna"
+    private String stato; // `PENDING`, `SENT`, `READ`, `FAILED`
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "read_at")
     private LocalDateTime readAt;
-
-    public void setStato(String stato) {
-        this.stato = stato;
-    }
-
-    public void setReadAt(LocalDateTime readAt) {
-        this.readAt = readAt;
-    }
 
     @PrePersist
     protected void onCreate() {

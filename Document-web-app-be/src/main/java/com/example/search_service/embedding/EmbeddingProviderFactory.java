@@ -18,7 +18,7 @@ public class EmbeddingProviderFactory {
         switch (providerType.toLowerCase()) {
             case "openai":
                 log.info("EmbeddingProvider selezionato: OpenAI");
-                return new OpenAiEmbeddingProvider();
+                //return new OpenAiEmbeddingProvider();
             default:
                 log.warn("EMBEDDING_PROVIDER='{}' non riconosciuto o non specificato, uso 'mock'", providerType);
                 return new MockEmbeddingProvider();

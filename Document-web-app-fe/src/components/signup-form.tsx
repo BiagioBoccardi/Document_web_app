@@ -1,25 +1,13 @@
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useContextCast } from "@/context/context";
 import { useState } from "react";
 import { Link } from "react-router";
 import z from "zod";
 
-const createUserFormSchema = z
-  .object({
+const createUserFormSchema = z.object({
     nome: z.string().min(2, "Il nome è obbligatorio"),
     email: z.string().email("Email non valida"),
     passwordHash: z
@@ -71,14 +59,14 @@ export function SignupForm() {
     const payload = {
       nome: parsed.data.nome,
       email: parsed.data.email,
-      passwordHash: parsed.data.passwordHash
-      
+      passwordHash: parsed.data.passwordHash,
+      isAdmin: parsed.data.isAdmin
     };
 
     await createUser(payload);
     form.reset();
     setIsAdmin(false);
-    
+
   };
 
   return (
@@ -160,7 +148,7 @@ export function SignupForm() {
                   <Field>
                     <Button type="submit">Crea Account</Button>
                     <FieldDescription className="text-center">
-                      Non hai un account?
+                      Hai già un account?
                       <Link
                         to="/signin"
                         className="text-blue-500 hover:underline"

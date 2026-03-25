@@ -102,3 +102,5 @@ Document-web-app-be/src/main/java/com/example/document_service/next-steps-and-te
 *.bak
 *.tmp
 *~
+# File di lock (es. npm, yarn, pip)
+secrets/
