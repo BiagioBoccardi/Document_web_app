@@ -61,7 +61,7 @@ Il focus esclusivo di questo progetto è lo sviluppo del **Microservizio 3 - Sea
 - [x] **SS-BE-10:** Consumer `document.updated` (reindicizzazione). _(Alta)_
 - [x] **SS-BE-11:** Consumer `document.deleted` (pulizia vettore). _(Alta)_
 - [x] **SS-BE-13:** Standardizzazione error handling API. _(Alta)_
-- [ ] **SS-BE-16:** Unit/Integration Test (Qdrant mock, endpoint, consumer). _(Alta)_
+- [x] **SS-BE-16:** Unit/Integration Test (Qdrant mock, endpoint, consumer). _(Alta)_
 - [ ] **SS-BE-14:** Resilienza eventi (deduplica, retry, backoff). _(Media)_
 - [ ] **SS-BE-15:** Performance tuning (topK, caching query brevi). _(Media)_
 - [ ] **SS-BE-17:** Logging e osservabilità. _(Media)_

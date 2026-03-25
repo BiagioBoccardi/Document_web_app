@@ -409,3 +409,50 @@ Standardizzazione del formato di risposta per tutti gli errori API. Prima di que
 | `422` | `topK` fuori dal range consentito (1–50) |
 | `500` | Errore interno generico (catch globale Javalin) |
 | `503` | Provider di embedding non disponibile |
+
+---
+
+## SS-BE-16 — Unit/Integration Test
+
+| Campo        | Valore                                                                 |
+|--------------|------------------------------------------------------------------------|
+| **Stato**    | ✅ Completato                                                          |
+| **Priorità** | Alta                                                                   |
+| **File**     | `test/.../unit/MockEmbeddingProviderTest.java`, `test/.../unit/JwtAuthMiddlewareTest.java`, `test/.../unit/DocumentEventConsumerTest.java`, `test/.../integration/SearchControllerTest.java` |
+
+### Descrizione
+Copertura di test per tutti i componenti principali del Search Service. I test unitari usano Mockito per isolare le dipendenze; il test di integrazione avvia un'istanza Javalin reale su porta casuale con dipendenze mockate.
+
+### Struttura test
+
+| File | Tipo | Cosa testa |
+|------|------|------------|
+| `MockEmbeddingProviderTest` | Unit | Dimensione vettore (384), range valori [-1,1], eccezione su testo nullo/vuoto |
+| `JwtAuthMiddlewareTest` | Unit | Token valido → userId impostato; header mancante / firma errata / scaduto / sub assente → 401 |
+| `DocumentEventConsumerTest` | Unit | `uploaded` snippet valido → upsert; snippet vuoto/null → skip; `updated` → upsert; `deleted` → delete |
+| `SearchControllerTest` | Integration | Health 200; embeddings 401/200/400; search 401/200/400/422; similar 401/400/404/200 |
+
+### Tecnologie
+
+| Componente | Libreria |
+|------------|---------|
+| Test runner | JUnit Jupiter 5.10.0 |
+| Mocking | Mockito 5.5.0 |
+| HTTP client (integration) | `java.net.http.HttpClient` (Java 11+) |
+| JWT generazione token di test | auth0 java-jwt 4.4.0 |
+| Server di test (integration) | Javalin su porta 0 (OS assegna porta libera) |
+
+### Come eseguire i test
+
+```bash
+cd Document-web-app-be
+
+# Tutti i test
+mvn test
+
+# Solo unit test
+mvn test -Dgroups=unit
+
+# Solo integration test
+mvn test -Dgroups=integration
+```
