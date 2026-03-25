@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useContextCast } from "@/context/context";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import z from "zod";
@@ -14,6 +15,7 @@ const loginSchema = z.object({
 
 export function LoginForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
   const { fetchSignIn } = useContextCast();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -33,7 +35,15 @@ export function LoginForm() {
     }
 
     setErrors({});
-    await fetchSignIn(parsed.data);
+    setLoading(true);
+    
+    try {
+      await fetchSignIn(parsed.data);
+    } catch (err) {
+      console.error("Errore durante il login:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -79,7 +89,16 @@ export function LoginForm() {
                     )}
                   </Field>
                   <Field>
-                    <Button type="submit">Login</Button>
+                    <Button type="submit" disabled={loading}>
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Login in corso...
+                        </>
+                      ) : (
+                        "Accedi"
+                      )}
+                    </Button>
                     <FieldDescription className="text-center">
                       Non hai un account?
                       <Link

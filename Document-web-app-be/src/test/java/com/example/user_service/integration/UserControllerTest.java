@@ -1,25 +1,35 @@
 package com.example.user_service.integration;
 
-import com.example.user_service.controller.UserController;
-import com.example.user_service.model.User;
-import com.example.user_service.service.UserService;
-import io.javalin.http.Context;
-import io.javalin.http.HttpStatus;
-import com.example.user_service.dto.LoginRequest;
-import com.example.user_service.dto.RegisterRequest;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import static org.mockito.Mockito.*;
+import com.example.user_service.controller.UserController;
+import com.example.user_service.dto.LoginRequest;
+import com.example.user_service.dto.RegisterRequest;
+import com.example.user_service.model.User;
+import com.example.user_service.service.UserService;
+
+import io.javalin.http.Context;
+import io.javalin.http.HttpStatus;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
@@ -153,7 +163,7 @@ class UserControllerTest {
             invokeRegister();
 
             verify(ctx).status(HttpStatus.CONFLICT);
-            verify(ctx, never()).json(any());
+            verify(ctx).json(any());
         }
 
         private void invokeRegister() {
@@ -179,6 +189,7 @@ class UserControllerTest {
         void shouldReturn200WhenLoginIsSuccessful() {
             LoginRequest req = buildLoginRequest("mario@example.com", "password123");
             User user = buildUser(1, "Mario", "mario@example.com");
+            ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
 
             when(ctx.bodyAsClass(LoginRequest.class)).thenReturn(req);
             when(userService.login("mario@example.com", "password123")).thenReturn(user);
@@ -186,7 +197,12 @@ class UserControllerTest {
             invokeLogin();
 
             verify(ctx).status(HttpStatus.OK);
-            verify(ctx).json(user);
+            verify(ctx).json(captor.capture());
+
+            Map<String, Object> response = (Map<String, Object>) captor.getValue();
+            
+            assertEquals(user, response.get("user"), "L'utente nel JSON deve essere quello corretto");
+            assertNotNull(response.get("token"), "Il token non deve essere nullo");
         }
 
         @Test
@@ -236,7 +252,7 @@ class UserControllerTest {
             invokeLogin();
 
             verify(ctx).status(HttpStatus.UNAUTHORIZED);
-            verify(ctx, never()).json(any());
+            verify(ctx).json(any());
         }
 
         private void invokeLogin() {

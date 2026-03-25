@@ -55,8 +55,19 @@ public class UserController {
     private void login(Context ctx) {
         LoginRequest body = ctx.bodyAsClass(LoginRequest.class);
 
+        if (body.email == null || body.email.isBlank() || 
+            body.passwordHash == null || body.passwordHash.isBlank()) {
+            ctx.status(HttpStatus.BAD_REQUEST);
+            return; 
+        }
+
         try {
             User user = userService.login(body.email, body.passwordHash); 
+
+            if (user == null) {
+                ctx.status(HttpStatus.UNAUTHORIZED).json(Map.of("error", "Credenziali non valide"));
+                return;
+            }
 
             // Genera il Token JWT
             String token = JwtUtils.generateToken(user.getId(), user.getEmail());
