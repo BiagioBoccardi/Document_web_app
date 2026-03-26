@@ -7,6 +7,8 @@ import { toast } from "sonner";
 
 const API_URL = "http://localhost:80";
 
+const DEV_AUTH_BYPASS = true;
+
 interface ContextType {
   currentUser: IUser | null;
   fetchSignIn: (data: { email: string; passwordHash: string }) => Promise<void>;
@@ -38,6 +40,13 @@ export const ContextProvider = ({
   children: React.ReactNode;
 }) => {
   const [currentUser, setCurrentUser] = useState<IUser | null>(() => {
+    if (DEV_AUTH_BYPASS) return {
+      id: 0,
+      nome: "Developer",
+      email:"dev@local",
+      passwordHash:""
+    } // Ritorna un utente di default per bypassare l'autenticazione in fase di sviluppo
+
     try {
       const stored = localStorage.getItem("currentUser");
       if (!stored || stored === "undefined") return null;
