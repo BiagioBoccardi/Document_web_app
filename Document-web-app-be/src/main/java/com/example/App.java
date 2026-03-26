@@ -10,20 +10,28 @@ import lombok.extern.slf4j.Slf4j;
 public class App {
 
     public static void main(String[] args) {
-        String serviceType = System.getenv("SERVICE_TYPE");
+        String serviceType = System.getenv().getOrDefault("SERVICE_TYPE", "ALL");
+        int defaultPort = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
 
         if (serviceType == null) {
             log.error("ERRORE: Variabile d'ambiente SERVICE_TYPE non impostata!");
             System.exit(1);
         }
 
-        log.info("Avvio del microservizio: {}", serviceType);
+        log.info("Configurazione rilevata - Servizio: {}, Porta base: {}", serviceType, defaultPort);
 
         switch (serviceType) {
-            case "USER_SERVICE"         -> startUserService();
-            case "NOTIFICATION_SERVICE" -> startNotificationService();
-            case "SEARCH_SERVICE"       -> startSearchService();
-            case "DOCUMENT_SERVICE"     -> startDocumentService();
+            case "ALL" -> {
+                log.info("MODALITÀ MULTI-SERVIZIO: Avvio di tutti i microservizi disponibili...");
+                startUserService(8081);
+                startDocumentService(8082);
+                startNotificationService(8084);
+                log.info("Nota: search-service non avviato (ancora da implementare).");
+            }
+            case "USER_SERVICE" -> startUserService(defaultPort);
+            case "NOTIFICATION_SERVICE" -> startNotificationService(defaultPort);
+            case "SEARCH_SERVICE" -> startSearchService();
+            case "DOCUMENT_SERVICE" -> startDocumentService(defaultPort);
             default -> {
                 log.error("Servizio sconosciuto: {}", serviceType);
                 System.exit(1);
@@ -31,15 +39,15 @@ public class App {
         }
     }
 
-    private static void startUserService() {
+    private static void startUserService(int port) {
         log.info("Inizializzazione User Service su Postgres...");
-        UserServiceApplication.start();
+        UserServiceApplication.start(port);
     }
 
-    private static void startNotificationService() {
+    private static void startNotificationService(int port) {
         log.info("Inizializzazione Notification Service su RabbitMQ...");
-        NotificationServiceApplication notificationApp = new NotificationServiceApplication();
-        // notificationApp.start(); 
+        NotificationServiceApplication notificationApplication = new NotificationServiceApplication();
+        notificationApplication.start(port); 
     }
 
     private static void startSearchService() {
@@ -47,9 +55,8 @@ public class App {
         // SearchServiceApplication.start(); // da implementare
     }
 
-    private static void startDocumentService() {
+    private static void startDocumentService(int port) {
         log.info("Inizializzazione Document Service...");
-        DocumentServiceApplication.start();
-        // NotificationService.start(); 
-        }
+        DocumentServiceApplication.start(port);
     }
+}

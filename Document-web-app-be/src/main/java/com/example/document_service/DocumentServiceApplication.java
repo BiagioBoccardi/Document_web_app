@@ -12,7 +12,9 @@ import com.example.document_service.service.DocumentOCRService;
 import com.example.document_service.service.DocumentService;
 
 import io.javalin.Javalin;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class DocumentServiceApplication {
     private static final int DEFAULT_PORT = 8082;
     private static final String DEFAULT_MONGO_URI = "mongodb://localhost:27017";
@@ -21,11 +23,17 @@ public class DocumentServiceApplication {
     private static final String DEFAULT_JWT_SECRET = "change-me-in-production";
     private static final String DEFAULT_JWT_ISSUER = "";
 
-    private DocumentServiceApplication() {
+    private DocumentServiceApplication() {}
+
+    //Avvio standard (legge la porta dalle variabili d'ambiente)
+    public static void start() {
+        start(readPort());
     }
 
-    public static void start() {
-        int port = readPort();
+    // Avvio pilotato da App.java 
+    public static void start(int port) {
+        log.info("Inizializzazione Document Service sulla porta {}...", port);
+        
         String mongoUri = readEnv("MONGO_URI", DEFAULT_MONGO_URI);
         String mongoDb = readEnv("MONGO_DB", DEFAULT_MONGO_DB);
         String mongoCollection = readEnv("MONGO_COLLECTION", DEFAULT_MONGO_COLLECTION);
@@ -39,10 +47,15 @@ public class DocumentServiceApplication {
         DocumentController documentController = new DocumentController(documentService);
         DocumentAuthMiddleware documentAuthMiddleware = new DocumentAuthMiddleware(jwtSecret, jwtIssuer);
 
-        Javalin app = Javalin.create(config -> config.showJavalinBanner = false)
-                .start(port);
+        Javalin app = Javalin.create(config -> {
+            config.showJavalinBanner = false;
+            config.plugins.enableCors(cors -> {
+                cors.add(it -> it.allowHost("http://localhost:5173", "http://localhost"));
+            });
+        }).start(port);
 
         DocumentHttpErrorHandler.register(app);
+        app.before("/api/v1/documents*", documentAuthMiddleware::authenticate);
 
         app.get("/health", context -> context.json(Map.of("status", "UP", "service", "document-service")));
         
@@ -51,11 +64,14 @@ public class DocumentServiceApplication {
         app.events(eventConfig -> eventConfig.serverStopped(documentRepository::close));
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Spegnimento Document Service...");
             try {
                 app.stop();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                log.error("Errore durante la chiusura del Document Service", e.getMessage());
             }
         }));
+        log.info("Document Service API pronta sulla porta {}", port);
     }
 
     private static int readPort() {

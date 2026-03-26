@@ -66,7 +66,7 @@ const Homepage = () => {
 
   return !currentUser ? (
     // Sezione Utente Non Loggato
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-linear-to-b from-gray-50 to-gray-100">
       <Card className="p-12 text-center max-w-2xl">
         <AlertCircle className="w-16 h-16 mx-auto mb-6 text-orange-500" />
         <h1 className="text-3xl font-bold mb-2">Utente Non Loggato</h1>

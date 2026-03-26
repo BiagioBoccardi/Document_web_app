@@ -2,54 +2,19 @@ import { useEffect, useState } from "react";
 import { useContextCast } from "@/context/context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import {
-  Users,
-  Plus,
-  Trash2,
-  UserPlus,
-  UserMinus,
-  Crown,
-  ChevronDown,
-  ChevronUp,
-  Search,
-} from "lucide-react";
+import { Users, Plus, Trash2, UserPlus, UserMinus, Crown, ChevronDown, ChevronUp, Search, Loader2 } from "lucide-react";
 
-const API_URL = "http://127.0.0.1:8081";
-
-interface User {
-  id: number;
-  nome: string;
-  email: string;
-}
-
-interface Gruppo {
-  id: number;
-  name: string;
-  owner: User;
-  membri: User[];
-}
 
 export function GroupsPage() {
-  const { currentUser } = useContextCast();
-
-  const [gruppi, setGruppi] = useState<Gruppo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+  const { currentUser, gruppi, users, loadingGruppi, fetchGruppi, fetchUsers, createGroup, deleteGroup, addMembersToGroup, removeMemberFromGroup } = useContextCast();
 
   // Create group dialog
   const [createOpen, setCreateOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
 
   // Add member dialog
   const [addMemberOpen, setAddMemberOpen] = useState(false);
@@ -59,93 +24,26 @@ export function GroupsPage() {
 
   // Search
   const [search, setSearch] = useState("");
-
-  // ── fetch all groups ──────────────────────────────────────────────────────
-  const fetchGruppi = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/gruppi`);
-      if (!res.ok) throw new Error();
-      const data: Gruppo[] = await res.json();
-      setGruppi(data);
-    } catch {
-      toast.error("Impossibile caricare i gruppi.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUsers = async () => {
-    // Genero 10 utenti 
-    const testUsers: User[] = Array.from({ length: 10 }, (_, i) => ({
-      id: 99900 + i,
-      nome: `Utente  ${i + 1}`,
-      email: `prova${i + 1}@test.com`
-    }));
-
-    try {
-      const res = await fetch(`${API_URL}/api/users`);
-      if (res.ok) {
-        const data = await res.json();
-        setUsers([...data, ...testUsers]);
-      } else {
-        setUsers(testUsers);
-      }
-    } catch {
-      console.error("Errore nel caricamento utenti");
-      setUsers(testUsers);
-    }
-  };
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchGruppi();
     fetchUsers();
-  }, []);
+  }, [fetchGruppi, fetchUsers]);
 
   // ── create group ──────────────────────────────────────────────────────────
   const handleCreate = async () => {
     if (!newGroupName.trim() || !currentUser) return;
     setCreating(true);
     try {
-      const res = await fetch(`${API_URL}/api/gruppi`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newGroupName.trim(),
-          owner: { id: currentUser.id }
-        }),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Errore server ${res.status}: ${errText}`);
-      }
-
-      const newGroup: Gruppo = await res.json();
-
-      // Aggiungi i membri selezionati
-      if (selectedUserIds.length > 0 && newGroup?.id) {
-        await Promise.all(selectedUserIds.map(uid =>
-          fetch(`${API_URL}/api/gruppi/${newGroup.id}/membri`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: uid }),
-          })
-        ));
-      }
-
-      toast.success(`Gruppo "${newGroupName.trim()}" creato!`);
+      await createGroup(newGroupName.trim(), currentUser.id, selectedUserIds);
+      toast.success(`Gruppo "${newGroupName.trim()}" creato con successo!`);
       setCreateOpen(false);
       setNewGroupName("");
       setSelectedUserIds([]);
-      await fetchGruppi();
-    } catch (e: any) {
-      console.error("Create group error:", e);
-
-      if (e.message === "Failed to fetch") {
-        toast.error("Errore di connessione. Controlla che il server backend sia acceso.");
-      } else {
-        toast.error(e.message || "Errore durante la creazione del gruppo.");
-      }
+    } catch (e) {
+      console.error("Errore creazione:", e);
+      toast.error(e instanceof Error ? e.message : "Impossibile creare il gruppo.");
     } finally {
       setCreating(false);
     }
@@ -154,68 +52,54 @@ export function GroupsPage() {
   // ── delete group ──────────────────────────────────────────────────────────
   const handleDelete = async (id: number) => {
     try {
-      const res = await fetch(`${API_URL}/api/gruppi/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
+      await deleteGroup(id);
       toast.success("Gruppo eliminato.");
-      await fetchGruppi();
     } catch {
       toast.error("Errore durante l'eliminazione.");
     }
   };
 
-  // ── add member ────────────────────────────────────────────────────────────
+  // Funzione che permette l'aggiunta di nuovi membri
   const handleAddMember = async () => {
     if (!addMemberGruppoId || addMemberUserIds.length === 0) return;
     setAddingMember(true);
     try {
-      await Promise.all(addMemberUserIds.map(uid =>
-        fetch(`${API_URL}/api/gruppi/${addMemberGruppoId}/membri`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: uid }),
-        })
-      ));
-      toast.success("Membri aggiunti!");
+      await addMembersToGroup(addMemberGruppoId, addMemberUserIds);
+      toast.success("Membri aggiornati correttamente!");
       setAddMemberOpen(false);
       setAddMemberUserIds([]);
-      await fetchGruppi();
-    } catch {
-      toast.error("Errore durante l'aggiunta del membro.");
+    } catch (e) {
+      toast.error("Errore durante l'aggiunta dei membri: " + e);
+      console.error("Errore durante l'aggiunta dei membri: ", e);
     } finally {
       setAddingMember(false);
     }
   };
 
-  // ── remove member ─────────────────────────────────────────────────────────
+  // Funzione che permette la rimozione dei membri (tranne l'owner)
   const handleRemoveMember = async (gruppoId: number, userId: number) => {
     try {
-      const res = await fetch(`${API_URL}/api/gruppi/${gruppoId}/membri`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-      if (res.status === 409) { toast.error("Non puoi rimuovere il proprietario."); return; }
-      if (!res.ok) throw new Error();
+      await removeMemberFromGroup(gruppoId, userId);
       toast.success("Membro rimosso.");
-      await fetchGruppi();
-    } catch {
-      toast.error("Errore durante la rimozione.");
+    } catch (e) {
+      if (e instanceof Error && e.message === "Non puoi rimuovere il proprietario.") {
+        toast.error("Non puoi rimuovere il proprietario.");
+      } else {
+        toast.error("Errore durante la rimozione.");
+      }
     }
   };
 
-  // ── filtered groups ───────────────────────────────────────────────────────
+  // Filtro ricerca
   const filtered = gruppi.filter((g) =>
     g.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ── computed values for dialogs ───────────────────────────────────────────
+  // -- Logica per utenti selezionabili --
   const groupToAddMemberTo = addMemberGruppoId ? gruppi.find(g => g.id === addMemberGruppoId) : null;
-  const availableUsersForAdding = groupToAddMemberTo
-    ? users.filter(u => !groupToAddMemberTo.membri.some(m => m.id === u.id))
-    : [];
+  const availableUsersForAdding = groupToAddMemberTo ? users.filter(u => !groupToAddMemberTo.members.some(m => m.id === u.id)) : [];
   const selectableUsers = users.filter(u => u.id !== currentUser?.id);
 
-  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-background pt-14">
       <div className="mx-auto max-w-3xl px-4 py-10">
@@ -249,21 +133,20 @@ export function GroupsPage() {
         </div>
 
         {/* List */}
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 rounded-lg border border-border bg-accent/30 animate-pulse" />
-            ))}
+        {loadingGruppi ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
+            <p className="mt-2 text-sm text-muted-foreground">Caricamento gruppi...</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16 text-center">
-            <Users size={36} className="mb-3 text-muted-foreground/40" />
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-20 text-center bg-accent/5">
+            <Users size={40} className="mb-4 text-muted-foreground/20" />
             <p className="text-sm font-medium text-muted-foreground">
-              {search ? "Nessun gruppo trovato." : "Nessun gruppo ancora. Creane uno!"}
+              {search ? "Nessun risultato per questa ricerca." : "Non fai ancora parte di alcun gruppo."}
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="grid gap-3">
             {filtered.map((gruppo) => {
               const isExpanded = expandedId === gruppo.id;
               const isOwner = currentUser?.id === gruppo.owner.id;
@@ -271,97 +154,96 @@ export function GroupsPage() {
               return (
                 <div
                   key={gruppo.id}
-                  className="rounded-lg border border-border bg-card overflow-hidden transition-all"
+                  className={`rounded-xl border transition-all duration-200 ${isExpanded ? 'border-primary/30 ring-1 ring-primary/10 shadow-sm' : 'border-border bg-card hover:border-primary/20'}`}
                 >
-                  {/* Row */}
                   <div className="flex items-center gap-3 px-4 py-3">
-                    {/* Expand toggle */}
                     <button
                       onClick={() => setExpandedId(isExpanded ? null : gruppo.id)}
-                      className="flex flex-1 items-center gap-3 text-left min-w-0"
+                      className="flex flex-1 items-center gap-4 text-left min-w-0"
                     >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary font-semibold text-sm">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold">
                         {gruppo.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{gruppo.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {gruppo.membri.length} membro{gruppo.membri.length !== 1 ? "i" : ""} · owner: {gruppo.owner.nome}
+                        <p className="text-sm font-semibold text-foreground truncate">{gruppo.name}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <Users size={12} />
+                          {gruppo.members.length} {gruppo.members.length === 1 ? "membro" : "membri"} 
+                          <span className="opacity-40">•</span> 
+                          owner: <span className="font-medium text-foreground/70">{gruppo.owner.nome}</span>
                         </p>
                       </div>
                     </button>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                        title="Aggiungi membro"
+                        className="h-8 w-8 rounded-full"
                         onClick={() => {
                           setAddMemberGruppoId(gruppo.id);
                           setAddMemberOpen(true);
                         }}
                       >
-                        <UserPlus size={14} />
+                        <UserPlus size={15} />
                       </Button>
+                      
                       {isOwner && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                          title="Elimina gruppo"
+                          className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           onClick={() => {
-                            if (window.confirm("Sei sicuro di voler eliminare questo gruppo?")) {
+                            if (window.confirm(`Vuoi davvero eliminare il gruppo "${gruppo.name}"?`)) {
                               handleDelete(gruppo.id);
                             }
                           }}
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={15} />
                         </Button>
                       )}
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full"
                         onClick={() => setExpandedId(isExpanded ? null : gruppo.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                       >
-                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                      </button>
+                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </Button>
                     </div>
                   </div>
 
-                  {/* Expanded: members list */}
                   {isExpanded && (
-                    <div className="border-t border-border bg-accent/20 px-4 py-3">
-                      <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Membri
+                    <div className="border-t border-border bg-accent/5 px-4 py-4 animate-in fade-in slide-in-from-top-1">
+                      <p className="mb-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                        Lista Partecipanti
                       </p>
-                      <ul className="space-y-1.5">
-                        {gruppo.membri.map((m) => (
-                          <li key={m.id} className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-semibold">
+                      <div className="grid gap-2">
+                        {gruppo.members.map((m) => (
+                          <div key={m.id} className="flex items-center justify-between group">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background border border-border text-xs font-bold text-muted-foreground">
                                 {m.nome.charAt(0).toUpperCase()}
                               </div>
-                              <span className="text-sm text-foreground truncate">{m.nome}</span>
+                              <span className="text-sm font-medium truncate">{m.nome}</span>
                               {m.id === gruppo.owner.id && (
-                                <Crown size={11} className="text-amber-500 shrink-0" />
+                                <Crown size={12} className="text-amber-500" />
                               )}
                             </div>
-                            {/* Remove member – only owner can, and can't remove themselves */}
+                            
                             {isOwner && m.id !== gruppo.owner.id && (
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                                title="Rimuovi membro"
+                                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                                 onClick={() => handleRemoveMember(gruppo.id, m.id)}
                               >
-                                <UserMinus size={13} />
+                                <UserMinus size={14} />
                               </Button>
                             )}
-                          </li>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -371,10 +253,9 @@ export function GroupsPage() {
         )}
       </div>
 
-      {/* ── Create group dialog ────────────────────────────────────────────── */}
+      {/* Create group dialog */}
       <Dialog open={createOpen} onOpenChange={(open) => {
         if (!open) {
-          // Reset state on close
           setNewGroupName("");
           setSelectedUserIds([]);
         }
@@ -383,6 +264,7 @@ export function GroupsPage() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Nuovo gruppo</DialogTitle>
+            <DialogDescription>Crea un nuovo gruppo con i suoi membri.</DialogDescription>
           </DialogHeader>
           <div className="py-2 space-y-4">
             <Input
@@ -428,10 +310,9 @@ export function GroupsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Add member dialog ──────────────────────────────────────────────── */}
+      {/* Aggiunge i membri alla dialog*/}
       <Dialog open={addMemberOpen} onOpenChange={(open) => {
         if (!open) {
-          // Reset state on close
           setAddMemberUserIds([]);
         }
         setAddMemberOpen(open);
@@ -439,6 +320,7 @@ export function GroupsPage() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Aggiungi membro</DialogTitle>
+            <DialogDescription>Seleziona i membri da aggiungere al gruppo.</DialogDescription>
           </DialogHeader>
           <div className="py-2">
             <div className="h-40 overflow-y-auto border rounded-md p-1 space-y-1 bg-background">

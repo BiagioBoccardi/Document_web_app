@@ -2,97 +2,99 @@ package com.example.notification_service;
 
 import com.example.notification_service.config.HibernateUtil;
 import com.example.notification_service.controller.NotificationController;
+import com.example.notification_service.messaging.EventConsumer;
 import com.example.notification_service.repository.NotificationRepository;
 import com.example.notification_service.service.NotificationService;
-import com.example.notification_service.messaging.EventConsumer;
+import com.example.notification_service.service.NotificationTemplateService;
 
 import io.javalin.Javalin;
+import static io.javalin.apibuilder.ApiBuilder.delete;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.path;
+import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.apibuilder.ApiBuilder.put;
 import io.javalin.http.HttpStatus;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Slf4j
 public class NotificationServiceApplication {
-    private static final Logger log = LoggerFactory.getLogger(NotificationServiceApplication.class);
     private final Javalin app;
     private final NotificationController notificationController;
     private final EventConsumer eventConsumer;
 
     public NotificationServiceApplication() {
         NotificationRepository repository = new NotificationRepository();
-        NotificationService service = new NotificationService(repository);
-        this.notificationController = new NotificationController(service);
-        
-        // Lo stub del consumer per RabbitMQ
-        this.eventConsumer = new EventConsumer(service);
+        NotificationService notificationService = new NotificationService(repository);
+        NotificationTemplateService templateService = new NotificationTemplateService();
+        this.notificationController = new NotificationController(notificationService);
+        this.eventConsumer = new EventConsumer(notificationService, templateService);
 
-        // 2. Configurazione Javalin
+        // Configurazione Javalin
         this.app = Javalin.create(config -> {
-            // Logging delle richieste per osservabilità
-            config.requestLogger.http((ctx, ms) -> {
-                log.info("{} {} - Stato: {} in {}ms", ctx.method(), ctx.path(), ctx.status(), ms);
+            // Configurazione CORS specifica per il frontend React
+            config.plugins.enableCors(cors -> {
+                cors.add(it -> it.allowHost("http://localhost:5173", "http://localhost"));
             });
-
-            // Configurazione CORS (se necessaria per il frontend)
-            // config.bundledPlugins.enableCors(cors -> {
-            //     cors.addRule(it -> it.anyHost());
-            // });
+            
+            config.requestLogger.http((ctx, ms) -> {
+                log.info("{} {} - status: {} in {}ms", ctx.method(), ctx.path(), ctx.status(), ms);
+            });
         });
 
         setupMiddleware();
         setupRoutes();
     }
+    
+    // Metodo utilizzato dentro i test
+    public Javalin getJavalinInstance() {
+        return this.app;
+    }
 
-    /**
-     * Configura i filtri di sicurezza globali.
-     */
     private void setupMiddleware() {
         app.before("/api/*", ctx -> {
-            // Verifica la presenza dell'header X-User-ID (iniettato dal Gateway)
-            String userId = ctx.header("X-User-ID");
-            if (userId == null || userId.isBlank()) {
-                log.warn("Accesso negato: Header X-User-ID mancante per il path {}", ctx.path());
-                throw new io.javalin.http.UnauthorizedResponse("Autenticazione richiesta");
+            // Requisito di sicurezza: Header X-User-ID obbligatorio
+            if (ctx.header("X-User-ID") == null) {
+                log.warn("Tentativo di accesso senza header identificativo su: {}", ctx.path());
+                throw new io.javalin.http.UnauthorizedResponse("Missing Authentication Header");
             }
         });
     }
 
-    /**
-     * Definizione degli endpoint API.
-     */
     private void setupRoutes() {
-        // Endpoint di Health Check
+        // Health check per Docker
         app.get("/health", ctx -> ctx.status(HttpStatus.OK).result("UP"));
 
-        // Gruppo API Notifiche v1
-        app.get("/api/v1/notifications", notificationController::listNotifications);          // GET lista
-        app.put("/api/v1/notifications/{id}/read", notificationController::markAsRead);   // PUT mark as read
-        app.delete("/api/v1/notifications/{id}", notificationController::deleteNotification); // DELETE
+        app.routes(() -> {
+            path("/api/v1/notifications", () -> {
+                get(notificationController::listNotifications);   
+                post(notificationController::createNotification);
+                put("/{id}/read", notificationController::markAsRead);   
+                delete("/{id}", notificationController::deleteNotification); 
+            });
+        });
     }
 
-    /**
-     * Avvia il servizio, il database e i consumer di messaggistica.
-     */
     public void start(int port) {
-        log.info("Avvio del Notification Service sulla porta {}...", port);
+        log.info("Inizializzazione Notification Service sulla porta {}...", port);
         
-        // Inizializza il pool di connessioni Hibernate
+        // Inizializza Hibernate
         HibernateUtil.getSessionFactory();
         
-        // Avvia l'ascolto dei messaggi RabbitMQ in un thread separato
-        // eventConsumer.startListening();
+        // Avvia l'ascolto degli eventi RabbitMQ
+        eventConsumer.startListening();
 
         app.start(port);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Chiusura in corso del Notification Service...");
+            this.stop();
+        }));
     }
 
-    /**
-     * Arresto pulito delle risorse.
-     */
     public void stop() {
-        log.info("Arresto del Notification Service...");
         eventConsumer.stopListening();
         app.stop();
         HibernateUtil.shutdown();
+        log.info("Notification Service arrestato correttamente.");
     }
 }

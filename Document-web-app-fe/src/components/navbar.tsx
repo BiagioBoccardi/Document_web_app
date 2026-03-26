@@ -11,6 +11,7 @@ import { useContextCast } from "@/context/context";
 import { LogIn, LogOut, UserCircle, Users, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { NotificationsDropdown } from "./notifications-dropdown";
 
 export const Navbar = () => {
   const { currentUser, signOut } = useContextCast();
@@ -38,11 +39,10 @@ export const Navbar = () => {
           {currentUser && (
             <Link
               to="/group"
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                isActive("/group")
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${isActive("/group")
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-              }`}
+                }`}
             >
               <Users size={15} />
               Gruppi
@@ -53,38 +53,41 @@ export const Navbar = () => {
         {/* Auth Area */}
         <div className="hidden sm:flex items-center gap-2">
           {currentUser ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <UserCircle size={17} className="text-muted-foreground" />
-                  <span className="max-w-[120px] truncate text-sm font-medium">
-                    {currentUser.nome}
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-semibold">{currentUser.nome}</span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {currentUser.email}
+            <>
+              <NotificationsDropdown />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <UserCircle size={25} className="text-muted-foreground" />
+                    <span className="max-w-30 truncate text-sm font-medium">
+                      {currentUser.nome}
                     </span>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={signOut}
-                  className="text-destructive focus:text-destructive cursor-pointer"
-                >
-                  <LogOut size={14} className="mr-2" />
-                  Esci
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-semibold">{currentUser.nome}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {currentUser.email}
+                      </span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={signOut}
+                    className="text-destructive focus:text-destructive cursor-pointer"
+                  >
+                    <LogOut size={15} className="mr-2" />
+                    Esci
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
             <>
               <Button variant="ghost" size="sm" asChild>
@@ -119,14 +122,16 @@ export const Navbar = () => {
                   <span className="text-xs text-muted-foreground">{currentUser.email}</span>
                 </div>
               </div>
+              <div className="px-1 py-1">
+                <NotificationsDropdown />
+              </div>
               <Link
                 to="/group"
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive("/group")
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${isActive("/group")
                     ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                }`}
+                  }`}
               >
                 <Users size={15} />
                 Gruppi

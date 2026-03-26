@@ -4,11 +4,8 @@
 
 <hibernate-configuration>
     <session-factory>
-        <!-- JDBC Database connection settings -->
         <property name="hibernate.connection.driver_class">org.postgresql.Driver</property>
-        <property name="hibernate.connection.url">jdbc:postgresql://localhost:5432/document_web_app</property>
-        <property name="hibernate.connection.username">${POSTGRES_USER}</property>
-        <property name="hibernate.connection.password">${POSTGRES_PASSWORD}</property>
+        <!-- Username e password si trovano in HibernateUtil.java -->
 
         <!-- JDBC connection pool settings -->
         <property name="hibernate.c3p0.min_size">5</property>
@@ -25,7 +22,7 @@
         <property name="hibernate.format_sql">true</property>
 
         <!-- Drop and re-create the database schema on startup -->
-        <property name="hibernate.hbm2ddl.auto">create</property>
+        <property name="hibernate.hbm2ddl.auto">update</property>
 
         <!-- Entities -->
         <mapping class="com.example.notification_service.entity.Notification"/>

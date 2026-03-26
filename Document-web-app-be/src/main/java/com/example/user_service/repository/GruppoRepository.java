@@ -4,10 +4,12 @@ import com.example.user_service.model.Gruppo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.NoResultException;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 public class GruppoRepository {
 
     private final EntityManagerFactory entityManagerFactory;
@@ -20,13 +22,14 @@ public class GruppoRepository {
         try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
             try {
                 entityManager.getTransaction().begin();
-                entityManager.persist(gruppo);
+                Gruppo savedGruppo = entityManager.merge(gruppo);
                 entityManager.getTransaction().commit();
-                return gruppo;
+                return savedGruppo;
             } catch (RuntimeException ex) {
                 if (entityManager.getTransaction().isActive()) {
                     entityManager.getTransaction().rollback();
                 }
+                log.error("Errore: " + ex.getMessage());
                 throw ex;
             }
         }
@@ -43,11 +46,12 @@ public class GruppoRepository {
         try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
             try {
                 Gruppo result = entityManager
-                        .createQuery("SELECT g FROM Gruppo g LEFT JOIN FETCH g.owner LEFT JOIN FETCH g.membri WHERE g.id = :id", Gruppo.class)
+                        .createQuery("SELECT g FROM Gruppo g LEFT JOIN FETCH g.owner LEFT JOIN FETCH g.members WHERE g.id = :id", Gruppo.class)
                         .setParameter("id", id)
                         .getSingleResult();
                 return Optional.of(result);
             } catch (NoResultException ex) {
+                log.error("Errore: " + ex.getMessage());
                 return Optional.empty();
             }
         }
@@ -61,7 +65,7 @@ public class GruppoRepository {
 
     public List<Gruppo> findAllWithDetails() {
         try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
-            return entityManager.createQuery("SELECT DISTINCT g FROM Gruppo g LEFT JOIN FETCH g.owner LEFT JOIN FETCH g.membri", Gruppo.class).getResultList();
+            return entityManager.createQuery("SELECT DISTINCT g FROM Gruppo g LEFT JOIN FETCH g.owner LEFT JOIN FETCH g.members", Gruppo.class).getResultList();
         }
     }
 
@@ -76,6 +80,7 @@ public class GruppoRepository {
                 if (entityManager.getTransaction().isActive()) {
                     entityManager.getTransaction().rollback();
                 }
+                log.error("Errore: " + ex.getMessage());
                 throw ex;
             }
         }
@@ -94,6 +99,7 @@ public class GruppoRepository {
                 if (entityManager.getTransaction().isActive()) {
                     entityManager.getTransaction().rollback();
                 }
+                log.error("Errore: " + ex.getMessage());
                 throw ex;
             }
         }

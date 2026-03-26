@@ -3,6 +3,7 @@ package com.example.user_service.unit;
 import com.example.user_service.model.Gruppo;
 import com.example.user_service.model.User;
 import com.example.user_service.repository.GruppoRepository;
+import com.example.user_service.repository.UserRepository;
 import com.example.user_service.service.GruppoService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,6 +20,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 @Tag("unit")
@@ -32,9 +34,11 @@ class GruppoServiceTest {
     @InjectMocks
     private GruppoService gruppoService;
 
-    // ─────────────────────────────────────────────
+    @Mock
+    private UserRepository userRepository;
+
+   
     // Helper: costruisce User e Gruppo di supporto
-    // ─────────────────────────────────────────────
     private User buildUser(int id, String nome, String email) {
         User u = new User();
         u.setId(id);
@@ -50,8 +54,7 @@ class GruppoServiceTest {
         g.setId(id);
         g.setName(nome);
         g.setOwner(owner);
-        // membri deve essere mutabile per addMembro/removeMembro
-        g.setMembri(new ArrayList<>(List.of(owner)));
+        g.setMembers(new ArrayList<>(List.of(owner)));
         return g;
     }
 
@@ -66,15 +69,17 @@ class GruppoServiceTest {
         @DisplayName("OK: crea gruppo con owner e lo aggiunge ai membri")
         void shouldCreateGruppoWithOwnerAsMember() {
             User owner = buildUser(1, "Mario", "mario@example.com");
+
+            when(userRepository.findById(1)).thenReturn(Optional.of(owner));
             when(gruppoRepository.save(any(Gruppo.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
 
-            Gruppo result = gruppoService.createGruppo("Team Alpha", owner);
+            Gruppo result = gruppoService.createGruppo("Team Alpha", 1, new ArrayList<>());
 
             assertAll(
                     () -> assertEquals("Team Alpha", result.getName()),
                     () -> assertEquals(owner, result.getOwner()),
-                    () -> assertTrue(result.getMembri().contains(owner),
+                    () -> assertTrue(result.getMembers().contains(owner),
                             "L'owner deve essere automaticamente aggiunto ai membri")
             );
             verify(gruppoRepository, times(1)).save(any(Gruppo.class));
@@ -194,11 +199,12 @@ class GruppoServiceTest {
             Gruppo gruppo = buildGruppo(1, "Team Alpha", owner);
 
             when(gruppoRepository.findByIdWithDetails(1)).thenReturn(Optional.of(gruppo));
+            when(userRepository.findById(2)).thenReturn(Optional.of(newMember));
             when(gruppoRepository.update(any(Gruppo.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            Gruppo result = gruppoService.addMembro(1, newMember);
+            Gruppo result = gruppoService.addMembro(1, 2);
 
-            assertTrue(result.getMembri().contains(newMember));
+            assertTrue(result.getMembers().contains(newMember));
             verify(gruppoRepository, times(1)).update(any(Gruppo.class));
         }
 
@@ -209,10 +215,10 @@ class GruppoServiceTest {
             Gruppo gruppo = buildGruppo(1, "Team Alpha", owner);
 
             when(gruppoRepository.findByIdWithDetails(1)).thenReturn(Optional.of(gruppo));
+            when(userRepository.findById(1)).thenReturn(Optional.of(owner));
 
-            // owner è già membro
             assertThrows(IllegalStateException.class,
-                    () -> gruppoService.addMembro(1, owner));
+                    () -> gruppoService.addMembro(1, 1));
 
             verify(gruppoRepository, never()).update(any());
         }
@@ -220,11 +226,10 @@ class GruppoServiceTest {
         @Test
         @DisplayName("KO: gruppo inesistente lancia IllegalArgumentException")
         void shouldThrowWhenGruppoNotFound() {
-            User user = buildUser(2, "Luigi", "luigi@example.com");
             when(gruppoRepository.findByIdWithDetails(99)).thenReturn(Optional.empty());
 
             assertThrows(IllegalArgumentException.class,
-                    () -> gruppoService.addMembro(99, user));
+                    () -> gruppoService.addMembro(99, 2));
         }
     }
 
@@ -241,14 +246,14 @@ class GruppoServiceTest {
             User owner  = buildUser(1, "Mario", "mario@example.com");
             User member = buildUser(2, "Luigi", "luigi@example.com");
             Gruppo gruppo = buildGruppo(1, "Team Alpha", owner);
-            gruppo.getMembri().add(member);
+            gruppo.getMembers().add(member);
 
             when(gruppoRepository.findByIdWithDetails(1)).thenReturn(Optional.of(gruppo));
             when(gruppoRepository.update(any(Gruppo.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            Gruppo result = gruppoService.removeMembro(1, member);
+            Gruppo result = gruppoService.removeMembro(1, 2);
 
-            assertFalse(result.getMembri().stream()
+            assertFalse(result.getMembers().stream()
                     .anyMatch(m -> m.getId() == member.getId()));
             verify(gruppoRepository, times(1)).update(any(Gruppo.class));
         }
@@ -262,7 +267,7 @@ class GruppoServiceTest {
             when(gruppoRepository.findByIdWithDetails(1)).thenReturn(Optional.of(gruppo));
 
             assertThrows(IllegalStateException.class,
-                    () -> gruppoService.removeMembro(1, owner));
+                    () -> gruppoService.removeMembro(1, 1));
 
             verify(gruppoRepository, never()).update(any());
         }
@@ -270,11 +275,10 @@ class GruppoServiceTest {
         @Test
         @DisplayName("KO: gruppo inesistente lancia IllegalArgumentException")
         void shouldThrowWhenGruppoNotFound() {
-            User user = buildUser(2, "Luigi", "luigi@example.com");
             when(gruppoRepository.findByIdWithDetails(99)).thenReturn(Optional.empty());
 
             assertThrows(IllegalArgumentException.class,
-                    () -> gruppoService.removeMembro(99, user));
+                    () -> gruppoService.removeMembro(99, 2));
         }
     }
 }
