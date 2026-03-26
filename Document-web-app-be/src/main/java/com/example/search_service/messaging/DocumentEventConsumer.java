@@ -1,22 +1,23 @@
 package com.example.search_service.messaging;
 
 import com.example.search_service.config.RabbitMQConfig;
+import com.example.search_service.config.ResilienceConfig;
 import com.example.search_service.dto.DocumentEvent;
 import com.example.search_service.embedding.EmbeddingProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.DeliverCallback;
-
+import com.rabbitmq.client.Delivery;
+import io.github.resilience4j.retry.Retry;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.grpc.Points.PointStruct;
-
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static io.qdrant.client.PointIdFactory.id;
 import static io.qdrant.client.ValueFactory.value;
@@ -24,9 +25,7 @@ import static io.qdrant.client.VectorsFactory.vectors;
 
 /**
  * Consumer RabbitMQ per gli eventi documento.
- * SS-BE-09: document.uploaded  → embedding + upsert Qdrant
- * SS-BE-10: document.updated   → re-embedding + upsert Qdrant
- * SS-BE-11: document.deleted   → delete da Qdrant
+ * Implementa Resilienza (Retry, Ack Manuale, Reject).
  */
 @Slf4j
 public class DocumentEventConsumer {
@@ -49,48 +48,56 @@ public class DocumentEventConsumer {
     public void startConsuming(Connection connection) throws IOException {
 
         // SS-BE-09: document.uploaded
-        registerConsumer(connection, RabbitMQConfig.QUEUE_DOCUMENT_UPLOADED, (tag, delivery) -> {
+        registerConsumer(connection, RabbitMQConfig.QUEUE_DOCUMENT_UPLOADED, (channel, tag, delivery) -> {
             String body = new String(delivery.getBody());
             log.info("Evento ricevuto su '{}': {}", RabbitMQConfig.QUEUE_DOCUMENT_UPLOADED, body);
             try {
                 DocumentEvent event = objectMapper.readValue(body, DocumentEvent.class);
                 handleDocumentUploaded(event);
+                // Conferma esplicita del successo a RabbitMQ
+                channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
             } catch (Exception e) {
-                log.error("Errore nel processare document.uploaded: {}", e.getMessage());
+                log.error("Fallimento definitivo elaborazione document.uploaded, scarto messaggio: {}", e.getMessage());
+                // Scarto il messaggio (requeue=false). Lo invia alla DLQ se configurata.
+                channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
             }
         });
 
         // SS-BE-10: document.updated
-        registerConsumer(connection, RabbitMQConfig.QUEUE_DOCUMENT_UPDATED, (tag, delivery) -> {
+        registerConsumer(connection, RabbitMQConfig.QUEUE_DOCUMENT_UPDATED, (channel, tag, delivery) -> {
             String body = new String(delivery.getBody());
             log.info("Evento ricevuto su '{}': {}", RabbitMQConfig.QUEUE_DOCUMENT_UPDATED, body);
             try {
                 DocumentEvent event = objectMapper.readValue(body, DocumentEvent.class);
                 handleDocumentUpdated(event);
+                channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
             } catch (Exception e) {
-                log.error("Errore nel processare document.updated: {}", e.getMessage());
+                log.error("Fallimento definitivo elaborazione document.updated, scarto messaggio: {}", e.getMessage());
+                channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
             }
         });
 
         // SS-BE-11: document.deleted
-        registerConsumer(connection, RabbitMQConfig.QUEUE_DOCUMENT_DELETED, (tag, delivery) -> {
+        registerConsumer(connection, RabbitMQConfig.QUEUE_DOCUMENT_DELETED, (channel, tag, delivery) -> {
             String body = new String(delivery.getBody());
             log.info("Evento ricevuto su '{}': {}", RabbitMQConfig.QUEUE_DOCUMENT_DELETED, body);
             try {
                 DocumentEvent event = objectMapper.readValue(body, DocumentEvent.class);
                 handleDocumentDeleted(event);
+                channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
             } catch (Exception e) {
-                log.error("Errore nel processare document.deleted: {}", e.getMessage());
+                log.error("Fallimento definitivo elaborazione document.deleted, scarto messaggio: {}", e.getMessage());
+                channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
             }
         });
 
-        log.info("Consumer RabbitMQ avviati per le code: uploaded, updated, deleted");
+        log.info("Consumer RabbitMQ avviati (Ack manuale e Retry attivi)");
     }
 
     // ─────────────────────────────────────────────
     // SS-BE-09: document.uploaded
     // ─────────────────────────────────────────────
-    private void handleDocumentUploaded(DocumentEvent event) {
+    private void handleDocumentUploaded(DocumentEvent event) throws Exception {
         log.info("Indicizzazione documento: {}", event.documentId);
 
         if (event.snippet == null || event.snippet.isBlank()) {
@@ -98,72 +105,94 @@ public class DocumentEventConsumer {
             return;
         }
 
-        try {
-            // 1. Genera embedding dallo snippet
-            float[] embedding = embeddingProvider.createEmbedding(event.snippet);
+        // 1. Genera embedding protetto da Retry
+        Supplier<float[]> embeddingSupplier = Retry.decorateSupplier(
+                ResilienceConfig.getEmbeddingRetry(),
+                () -> embeddingProvider.createEmbedding(event.snippet)
+        );
+        float[] embedding = embeddingSupplier.get();
 
-            // 2. Costruisce il punto vettoriale con payload
-            PointStruct point = PointStruct.newBuilder()
-                    .setId(id(UUID.fromString(event.documentId)))
-                    .setVectors(vectors(embedding))
-                    .putAllPayload(Map.of(
-                            "documentId", value(event.documentId),
-                            "userId",     value(event.userId),
-                            "filename",   value(event.filename),
-                            "snippet",    value(event.snippet)
-                    ))
-                    .build();
+        // 2. Costruisce il punto vettoriale con payload
+        PointStruct point = PointStruct.newBuilder()
+                .setId(id(UUID.fromString(event.documentId)))
+                .setVectors(vectors(embedding))
+                .putAllPayload(Map.of(
+                        "documentId", value(event.documentId),
+                        "userId",     value(event.userId),
+                        "filename",   value(event.filename),
+                        "snippet",    value(event.snippet)
+                ))
+                .build();
 
-            // 3. Upsert in Qdrant
-            qdrantClient.upsertAsync(COLLECTION_NAME,
-                    List.of(point)).get();
+        // 3. Upsert in Qdrant protetto da Retry
+        Runnable qdrantUpsert = Retry.decorateRunnable(
+                ResilienceConfig.getQdrantRetry(),
+                () -> {
+                    try {
+                        qdrantClient.upsertAsync(COLLECTION_NAME, List.of(point)).get();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Errore Qdrant Upsert", e);
+                    }
+                }
+        );
+        qdrantUpsert.run();
 
-            log.info("Documento '{}' indicizzato con successo in Qdrant", event.documentId);
-
-        } catch (Exception e) {
-            log.error("Errore durante l'indicizzazione del documento '{}': {}",
-                    event.documentId, e.getMessage());
-        }
+        log.info("Documento '{}' indicizzato con successo in Qdrant", event.documentId);
     }
 
     // ─────────────────────────────────────────────
     // SS-BE-10: document.updated
     // ─────────────────────────────────────────────
-    private void handleDocumentUpdated(DocumentEvent event) {
+    private void handleDocumentUpdated(DocumentEvent event) throws Exception {
         log.info("Re-indicizzazione documento aggiornato: {}", event.documentId);
-        // La logica è identica all'upload: upsert sovrascrive il vettore esistente
+        // L'operazione upsert è idempotente: sovrascrive il vettore precedente
         handleDocumentUploaded(event);
     }
 
     // ─────────────────────────────────────────────
     // SS-BE-11: document.deleted
     // ─────────────────────────────────────────────
-    private void handleDocumentDeleted(DocumentEvent event) {
+    private void handleDocumentDeleted(DocumentEvent event) throws Exception {
         log.info("Rimozione documento da Qdrant: {}", event.documentId);
 
-        try {
-            qdrantClient.deleteAsync(COLLECTION_NAME,
-                    List.of(id(UUID.fromString(event.documentId)))).get();
+        // Cancellazione da Qdrant protetta da Retry
+        Runnable qdrantDelete = Retry.decorateRunnable(
+                ResilienceConfig.getQdrantRetry(),
+                () -> {
+                    try {
+                        qdrantClient.deleteAsync(COLLECTION_NAME,
+                                List.of(id(UUID.fromString(event.documentId)))).get();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Errore Qdrant Delete", e);
+                    }
+                }
+        );
+        qdrantDelete.run();
 
-            log.info("Documento '{}' rimosso da Qdrant", event.documentId);
-
-        } catch (Exception e) {
-            log.error("Errore durante la rimozione del documento '{}': {}",
-                    event.documentId, e.getMessage());
-        }
+        log.info("Documento '{}' rimosso da Qdrant", event.documentId);
     }
 
     // ─────────────────────────────────────────────
-    // Helper: registra un consumer su una coda
+    // Helpers
     // ─────────────────────────────────────────────
+
+    // Interfaccia personalizzata per poter passare il Channel al blocco try/catch
+    @FunctionalInterface
+    private interface ChannelDeliverCallback {
+        void handle(Channel channel, String consumerTag, Delivery delivery) throws IOException;
+    }
+
     private void registerConsumer(Connection connection, String queueName,
-                                   DeliverCallback callback) throws IOException {
+                                  ChannelDeliverCallback callback) throws IOException {
         Channel channel = connection.createChannel();
-        // Crea la coda se non esiste (idempotente)
         channel.queueDeclare(queueName, true, false, false, null);
-        // Processa un messaggio alla volta
         channel.basicQos(1);
-        channel.basicConsume(queueName, true, callback, tag -> {});
+        
+       
+        channel.basicConsume(queueName, false, (tag, delivery) -> {
+            callback.handle(channel, tag, delivery);
+        }, tag -> {});
+        
         log.info("Consumer registrato sulla coda '{}'", queueName);
     }
 }

@@ -455,4 +455,41 @@ mvn test -Dgroups=unit
 
 # Solo integration test
 mvn test -Dgroups=integration
+
 ```
+## SS-BE-14 — Resilienza Eventi
+
+| Campo        | Valore                                                                                                    |
+|--------------|-----------------------------------------------------------------------------------------------------------|
+| **Stato** | ✅ Completato                                                                                             |
+| **Priorità** | Media                                                                                                     |
+| **File** | `config/ResilienceConfig.java`, `messaging/DocumentEventConsumer.java`, `pom.xml`                         |
+
+### Descrizione
+Implementazione di meccanismi di affidabilità avanzati per il consumo dei messaggi RabbitMQ. Il sistema è ora in grado di gestire fallimenti temporanei (es. disservizi di rete verso Qdrant o rate-limiting del provider di Embedding) tramite pattern di Retry con Exponential Backoff, garantendo al contempo che messaggi perennemente errati non blocchino le code (Poison Message Handling).
+
+### Come è implementato
+Sono state introdotte tre difese principali utilizzando la libreria **Resilience4j**:
+- **Ack Manuale:** Disabilitato l'auto-acknowledgement di RabbitMQ (`autoAck = false`). Il messaggio viene rimosso dalla coda solo dopo il successo esplicito (`channel.basicAck()`).
+- **Retry con Exponential Backoff:** Le chiamate critiche sono avvolte in `Retry.decorateSupplier` o `Retry.decorateRunnable`.
+- **Gestione Scarti (DLQ Routing):** Se tutti i tentativi falliscono, il messaggio viene scartato definitivamente tramite `channel.basicReject(..., false)`, permettendo al broker di instradarlo verso una Dead Letter Queue (se configurata).
+
+### Configurazione Resilience4j (`ResilienceConfig.java`)
+
+### Tecnologie
+
+| Componente  | Libreria / Pattern | 
+|--------------|---------------|
+|Libreria Retry| io.github.resilience4j:resilience4j-retry:2.2.0|
+|RabbitMQ Acks| Manual Acknowledgement (basicAck, basicReject)|
+|Idempotenza| Nativa tramite upsert su Qdrant usando il documentId come chiave|
+
+### Pipeline interna (Esempio su `document.uploaded`)
+```text
+1. Ricezione messaggio da RabbitMQ
+2. Avvio Supplier decorato per Embedding (max 3 tentativi)
+3. Costruzione PointStruct
+4. Avvio Runnable decorato per Qdrant Upsert (max 3 tentativi)
+5. Se successo: channel.basicAck() → Messaggio processato
+6. Se eccezione dopo tutti i retry: channel.basicReject() → Messaggio scartato
+

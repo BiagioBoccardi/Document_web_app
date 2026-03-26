@@ -7,6 +7,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.search_service.config.DotenvConfig;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
+import io.javalin.http.UnauthorizedResponse; // Importante: aggiunta questa classe
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -17,11 +18,10 @@ public class JwtAuthMiddleware {
     public static void handle(Context ctx) {
         String authHeader = ctx.header("Authorization");
 
+        // Controllo header: se manca o è errato, lanciamo l'eccezione di Javalin
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            ctx.status(HttpStatus.UNAUTHORIZED)
-               .json("{\"error\": \"Token di autenticazione mancante o non valido\"}");
-            ctx.skipRemainingHandlers();
-            return;
+            log.warn("Tentativo di accesso senza token valido");
+            throw new UnauthorizedResponse("Token di autenticazione mancante o non valido");
         }
 
         String token = authHeader.substring(7);
@@ -40,9 +40,8 @@ public class JwtAuthMiddleware {
 
         } catch (JWTVerificationException e) {
             log.warn("Token JWT non valido: {}", e.getMessage());
-            ctx.status(HttpStatus.UNAUTHORIZED)
-               .json("{\"error\": \"Token non valido o scaduto\"}");
-            ctx.skipRemainingHandlers();
+            // Anche qui, interrompiamo tutto con un'eccezione 401
+            throw new UnauthorizedResponse("Token non valido o scaduto");
         }
     }
 }

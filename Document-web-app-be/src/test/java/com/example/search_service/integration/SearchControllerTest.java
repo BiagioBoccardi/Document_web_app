@@ -1,5 +1,6 @@
 package com.example.search_service.integration;
 
+import com.google.common.util.concurrent.Futures;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.example.search_service.auth.JwtAuthMiddleware;
@@ -31,7 +32,6 @@ import java.net.http.HttpResponse;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
@@ -85,11 +85,15 @@ class SearchControllerTest {
     void resetMocks() {
         reset(mockProvider, mockQdrant);
         lenient().when(mockProvider.createEmbedding(anyString())).thenReturn(new float[384]);
+        
+        // Modifica: Futures.immediateFuture invece di CompletableFuture
         lenient().when(mockQdrant.searchAsync(any(SearchPoints.class)))
-                .thenReturn(CompletableFuture.completedFuture(List.of()));
+                .thenReturn(Futures.immediateFuture(List.of()));
+        
+        // Modifica: Futures.immediateFuture invece di CompletableFuture
         lenient().when(mockQdrant.retrieveAsync(anyString(), anyList(),
                 any(WithPayloadSelector.class), any(WithVectorsSelector.class), any()))
-                .thenReturn(CompletableFuture.completedFuture(List.of()));
+                .thenReturn(Futures.immediateFuture(List.of()));
     }
 
     @AfterAll
@@ -240,10 +244,10 @@ class SearchControllerTest {
         @Test
         @DisplayName("KO: documento non trovato in Qdrant — risponde 404")
         void shouldReturn404WhenDocumentNotFound() throws Exception {
-            // retrieveAsync restituisce lista vuota → 404
+            // Modifica: Futures.immediateFuture
             when(mockQdrant.retrieveAsync(anyString(), anyList(),
                     any(WithPayloadSelector.class), any(WithVectorsSelector.class), any()))
-                    .thenReturn(CompletableFuture.completedFuture(List.of()));
+                    .thenReturn(Futures.immediateFuture(List.of()));
 
             HttpResponse<String> res = get("/api/v1/search/similar/" + DOC_ID, validToken);
             assertEquals(404, res.statusCode());
@@ -252,7 +256,6 @@ class SearchControllerTest {
         @Test
         @DisplayName("OK: documento trovato — risponde 200")
         void shouldReturn200WhenDocumentFound() throws Exception {
-            // Costruisce un RetrievedPoint con vettore da 384 float
             float[] vec = new float[384];
             io.qdrant.client.grpc.Points.Vectors vectors =
                     io.qdrant.client.grpc.Points.Vectors.newBuilder()
@@ -265,11 +268,14 @@ class SearchControllerTest {
                     .setVectors(vectors)
                     .build();
 
+            // Modifica: Futures.immediateFuture
             when(mockQdrant.retrieveAsync(anyString(), anyList(),
                     any(WithPayloadSelector.class), any(WithVectorsSelector.class), any()))
-                    .thenReturn(CompletableFuture.completedFuture(List.of(point)));
+                    .thenReturn(Futures.immediateFuture(List.of(point)));
+            
+            // Modifica: Futures.immediateFuture
             when(mockQdrant.searchAsync(any(SearchPoints.class)))
-                    .thenReturn(CompletableFuture.completedFuture(List.of()));
+                    .thenReturn(Futures.immediateFuture(List.of()));
 
             HttpResponse<String> res = get("/api/v1/search/similar/" + DOC_ID, validToken);
             assertEquals(200, res.statusCode());
