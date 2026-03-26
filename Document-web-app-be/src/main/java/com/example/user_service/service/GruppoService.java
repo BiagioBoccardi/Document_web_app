@@ -1,14 +1,14 @@
 package com.example.user_service.service;
 
+import java.util.List;
+import java.util.Optional;
+
 import com.example.user_service.model.Gruppo;
 import com.example.user_service.model.User;
 import com.example.user_service.repository.GruppoRepository;
 import com.example.user_service.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 public class GruppoService {
@@ -29,13 +29,16 @@ public class GruppoService {
         gruppo.getMembers().add(owner);
 
         if (members != null) {
-            for (int id : members) {
+            for (Integer id : members) {
+                if (id == ownerId) continue; 
+
                 userRepository.findById(id).ifPresent(member -> {
-                    gruppo.getMembers().add(member);
+                    if (!gruppo.getMembers().contains(member)) {
+                        gruppo.getMembers().add(member);
+                    }
                 });
             }
         }
-        
         return gruppoRepository.save(gruppo);
     }
 

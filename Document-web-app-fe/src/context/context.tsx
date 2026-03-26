@@ -103,7 +103,6 @@ export const ContextProvider = ({
       }
 
       toast.success("Registrazione avvenuta con successo!");
-      console.log("Registrazione success:", response);
       navigate("/signin");
     } catch (error) {
       toast.error("errore: " + error)
@@ -171,26 +170,13 @@ export const ContextProvider = ({
       body: JSON.stringify({
         name: name.trim(),
         ownerId: ownerId,
-        members: members
+        members: members 
       }),
     });
 
     if (!res.ok) {
       const errText = await res.text();
       throw new Error(`Errore server ${res.status}: ${errText}`);
-    }
-
-    const newGroup: IGruppo = await res.json();
-
-    // Aggiunge i membri selezionati
-    if (members.length > 0 && newGroup?.id) {
-      await Promise.all(members.map(uid =>
-        fetch(`${API_URL}/api/v1/gruppi/${newGroup.id}/membri`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: uid }),
-        })
-      ));
     }
 
     await fetchGruppi();
@@ -250,7 +236,7 @@ export const ContextProvider = ({
       setNotifications(data);
     } catch (error) {
       console.error("Errore caricamento notifiche: ", error);
-      toast.error("Errore caricamento notifiche: " + error);
+      toast.error("Errore caricamento notifiche!");
     } finally {
       setLoadingNotifications(false);
     }
@@ -294,7 +280,6 @@ export const ContextProvider = ({
     const userId = currentUser?.id;
     
     if (userId && userId !== 0) {
-      console.log("Inizializzazione dati per utente:", userId);
       fetchNotifications();
       fetchGruppi();
       fetchUsers();

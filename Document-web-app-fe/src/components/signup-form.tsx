@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useContextCast } from "@/context/context";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import z from "zod";
@@ -28,6 +29,7 @@ const createUserFormSchema = z.object({
 export function SignupForm() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
   const { createUser } = useContextCast();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -55,18 +57,24 @@ export function SignupForm() {
     }
 
     setErrors({});
+    setIsLoading(true)
 
-    const payload = {
-      nome: parsed.data.nome,
-      email: parsed.data.email,
-      passwordHash: parsed.data.passwordHash,
-      isAdmin: parsed.data.isAdmin
-    };
+    try {
+      const payload = {
+        nome: parsed.data.nome,
+        email: parsed.data.email,
+        passwordHash: parsed.data.passwordHash,
+        isAdmin: parsed.data.isAdmin
+      };
 
-    await createUser(payload);
-    form.reset();
-    setIsAdmin(false);
-
+      await createUser(payload);
+      form.reset();
+      setIsAdmin(false);
+    } catch (error) {
+      console.error("Errore durante la creazione:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -146,7 +154,16 @@ export function SignupForm() {
                 </Field>
                 <FieldGroup>
                   <Field>
-                    <Button type="submit">Crea Account</Button>
+                    <Button type="submit" disabled={isLoading}>
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creazione in corso...
+                        </>
+                      ) : (
+                        "Crea Account"
+                      )}
+                    </Button>
                     <FieldDescription className="text-center">
                       Hai già un account?
                       <Link

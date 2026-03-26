@@ -320,6 +320,7 @@ export function GroupsPage() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Aggiungi membro</DialogTitle>
+            <DialogDescription>Seleziona i membri da aggiungere al gruppo.</DialogDescription>
           </DialogHeader>
           <div className="py-2">
             <div className="h-40 overflow-y-auto border rounded-md p-1 space-y-1 bg-background">
