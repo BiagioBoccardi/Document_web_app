@@ -1,15 +1,17 @@
 package com.example.notification_service.repository;
 
-import com.example.notification_service.entity.Notification;
-import com.example.notification_service.config.HibernateUtil;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import com.example.notification_service.config.HibernateUtil;
+import com.example.notification_service.entity.Notification;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class NotificationRepository {

@@ -21,7 +21,8 @@ public class NotificationService {
      */
     public List<Notification> getUserNotifications(int userId, String status, int page, int size) {
         log.info("Recupero notifiche per utente: {} (Stato: {}, Pagina: {})", userId, status, page);
-        int offset = (page - 1) * size;
+        int offset = Math.max(0, (page - 1) * size);
+        if (status != null) status = status.toUpperCase();
         return repository.findByUserId(userId, status, offset, size);
     }
 
