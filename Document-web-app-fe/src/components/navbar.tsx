@@ -8,7 +8,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useContextCast } from "@/context/context";
-import { LogIn, LogOut, UserCircle, Users, Menu, X } from "lucide-react";
+import {
+  LogIn,
+  LogOut,
+  UserCircle,
+  Users,
+  Menu,
+  X,
+  Search,
+} from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { NotificationsDropdown } from "./notifications-dropdown";
@@ -37,16 +45,31 @@ export const Navbar = () => {
         {/* Desktop Nav */}
         <nav className="hidden sm:flex items-center gap-1">
           {currentUser && (
-            <Link
-              to="/group"
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${isActive("/group")
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+            <>
+              <Link
+                to="/group"
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  isActive("/group")
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 }`}
-            >
-              <Users size={15} />
-              Gruppi
-            </Link>
+              >
+                <Users size={15} />
+                Gruppi
+              </Link>
+
+              <Link
+                to="/ricerca"
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  isActive("/ricerca")
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                }`}
+              >
+                <Search size={15} />
+                Ricerca
+              </Link>
+            </>
           )}
         </nav>
 
@@ -71,7 +94,9 @@ export const Navbar = () => {
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-semibold">{currentUser.nome}</span>
+                      <span className="text-sm font-semibold">
+                        {currentUser.nome}
+                      </span>
                       <span className="text-xs text-muted-foreground truncate">
                         {currentUser.email}
                       </span>
@@ -118,26 +143,49 @@ export const Navbar = () => {
               <div className="flex items-center gap-2 py-1.5 px-1">
                 <UserCircle size={17} className="text-muted-foreground" />
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold">{currentUser.nome}</span>
-                  <span className="text-xs text-muted-foreground">{currentUser.email}</span>
+                  <span className="text-sm font-semibold">
+                    {currentUser.nome}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {currentUser.email}
+                  </span>
                 </div>
               </div>
               <div className="px-1 py-1">
                 <NotificationsDropdown />
               </div>
+
               <Link
                 to="/group"
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${isActive("/group")
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive("/group")
                     ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                  }`}
+                }`}
               >
                 <Users size={15} />
                 Gruppi
               </Link>
+
+              <Link
+                to="/ricerca"
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive("/ricerca")
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                }`}
+              >
+                <Search size={15} />
+                Ricerca
+              </Link>
+
               <button
-                onClick={() => { signOut(); setMobileOpen(false); }}
+                onClick={() => {
+                  signOut();
+                  setMobileOpen(false);
+                }}
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
               >
                 <LogOut size={15} />
