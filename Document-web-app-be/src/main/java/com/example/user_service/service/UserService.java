@@ -1,23 +1,30 @@
 package com.example.user_service.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import com.example.user_service.messaging.EventProducer;
 import com.example.user_service.model.User;
 import com.example.user_service.repository.UserRepository;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
+    private final EventProducer eventProducer;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, EventProducer eventProducer) {
         this.userRepository = userRepository;
+        this.eventProducer = eventProducer;
     }
 
     public User register(String nome, String email, String plainPassword) {
         Optional<User> existingUser = userRepository.findByEmail(email);
+
         if (existingUser.isPresent()) {
             throw new IllegalStateException("Email già registrata");
         }
@@ -30,7 +37,16 @@ public class UserService {
         String hash = BCrypt.withDefaults().hashToString(12, plainPassword.toCharArray());
         user.setPasswordHash(hash);
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user); 
+        
+        // Invia evento di registrazione a RabbitMQ
+        eventProducer.sendEvent(
+            "user.registered", 
+            savedUser.getId(), 
+            Map.of("nome", savedUser.getNome())
+        );
+
+        return savedUser;
     }
 
     public User login(String email, String plainPassword) {

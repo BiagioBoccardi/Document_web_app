@@ -25,33 +25,52 @@ public class EventConsumer {
     private Channel channel;
 
     public void startListening() {
-        try {
-            ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost(System.getenv().getOrDefault("RABBITMQ_HOST", "localhost"));
-            
-            this.connection = factory.newConnection();
-            this.channel = connection.createChannel();
+        int attempts = 0;
+        int maxAttempts = 5;
 
-            channel.queueDeclare(QUEUE_NAME, true, false, false, null);
-            log.info("Ricezione eventi attiva sulla coda: {}", QUEUE_NAME);
+        while (attempts < maxAttempts) {
+            try {
+                ConnectionFactory factory = new ConnectionFactory();
+                // Assicurati che l'host sia "rabbitmq" come nel docker-compose
+                factory.setHost(System.getenv().getOrDefault("RABBITMQ_HOST", "localhost"));
+                
+                this.connection = factory.newConnection();
+                this.channel = connection.createChannel();
 
-            DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                try {
-                    GenericEvent event = objectMapper.readValue(message, GenericEvent.class);
-                    processEvent(event);
-                    channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                } catch (Exception e) {
-                    log.error("Errore elaborazione evento: {}", message, e);
-                    // In caso di errore, non confermiamo (requeue = true per riprovare)
-                    channel.basicNack(delivery.getEnvelope().getDeliveryTag(), false, true);
+                channel.queueDeclare(QUEUE_NAME, true, false, false, null);
+                
+                DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
+                    try {
+                        GenericEvent event = objectMapper.readValue(message, GenericEvent.class);
+                        processEvent(event);
+                        channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                    } catch (Exception e) {
+                        log.error("Errore elaborazione evento: {}", message, e);
+                        channel.basicNack(delivery.getEnvelope().getDeliveryTag(), false, true);
+                    }
+                };
+
+                channel.basicConsume(QUEUE_NAME, false, deliverCallback, consumerTag -> {});
+                
+                log.info("Ricezione eventi attiva sulla coda: {}", QUEUE_NAME);
+                break; 
+
+            } catch (Exception e) {
+                attempts++;
+                log.warn("Tentativo {}/{} fallito: RabbitMQ non raggiungibile. Riprovo tra 5 secondi...", attempts, maxAttempts);
+                
+                if (attempts >= maxAttempts) {
+                    log.error("Massimo numero di tentativi raggiunto. Notifiche via eventi DISABILITATE.");
+                } else {
+                    try {
+                        Thread.sleep(5000); 
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
-            };
-
-            channel.basicConsume(QUEUE_NAME, false, deliverCallback, consumerTag -> {});
-
-        } catch (Exception e) {
-            log.warn("RabbitMQ non raggiungibile. Notifiche via eventi disabilitate: {}", e.getMessage());
+            }
         }
     }
 
