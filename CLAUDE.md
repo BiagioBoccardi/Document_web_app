@@ -69,10 +69,10 @@ Il focus esclusivo di questo progetto è lo sviluppo del **Microservizio 3 - Sea
 
 ### Frontend (SS-FE)
 
-- [ ] **SS-FE-01:** Routing pagina protetta `Ricerca Semantica` (verifica JWT). _(Alta)_
-- [ ] **SS-FE-02:** Form ricerca semantica (validazione, opzioni `topK`). _(Alta)_
-- [ ] **SS-FE-03:** Integrazione `POST /api/v1/search` (loading state, abort controller). _(Alta)_
-- [ ] **SS-FE-04:** UI Risultati ricerca (score, snippet, filename). _(Alta)_
+- [x] **SS-FE-01:** Routing pagina protetta `Ricerca Semantica` (verifica JWT). _(Alta)_
+- [x] **SS-FE-02:** Form ricerca semantica (validazione, opzioni `topK`). _(Alta)_
+- [x] **SS-FE-03:** Integrazione `POST /api/v1/search` (loading state, abort controller). _(Alta)_
+- [x] **SS-FE-04:** UI Risultati ricerca (score, snippet, filename). _(Alta)_
 - [ ] **SS-FE-05:** UI Documenti simili via `GET /api/v1/search/similar/{documentId}`. _(Alta)_
 - [ ] **SS-FE-08:** Error handling UI (4xx/5xx, token scaduto, empty state). _(Alta)_
 - [ ] **SS-FE-06:** UI Dev/Admin per test `POST /api/v1/embeddings`. _(Media)_

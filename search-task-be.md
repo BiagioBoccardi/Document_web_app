@@ -493,3 +493,103 @@ Sono state introdotte tre difese principali utilizzando la libreria **Resilience
 5. Se successo: channel.basicAck() → Messaggio processato
 6. Se eccezione dopo tutti i retry: channel.basicReject() → Messaggio scartato
 
+### SS-FE-01 — Routing pagina protetta `Ricerca Semantica`
+
+| Campo        | Valore                                                                                                    |
+|--------------|-----------------------------------------------------------------------------------------------------------|
+| **Stato** | ✅ Completato                                                                                             |
+| **Priorità** | Alta                                                                                                      |
+| **File** | `App.tsx`, `components/protected-route.tsx`, `pages/SearchPage.tsx`, `components/navbar.tsx`              |
+
+### Descrizione
+Creazione dell'impalcatura per la pagina di Ricerca Semantica. L'accesso è limitato esclusivamente agli utenti autenticati tramite un componente "guardiano". È stato inoltre integrato il link di accesso rapido nella barra di navigazione principale, sia per la visualizzazione desktop che mobile.
+
+### Come è implementato
+Sono stati configurati tre elementi chiave nel frontend:
+- **Guardiano (ProtectedRoute):** Un componente che intercetta la navigazione. Verifica la presenza del `token` nel `localStorage`; se assente, esegue un redirect forzato (`<Navigate replace />`) alla root del sito.
+- **Routing centralizzato (`App.tsx`):** Le rotte sono state raggruppate. Il componente `<Layout />` funge da wrapper globale (fornendo la Navbar tramite `<Outlet />`), mentre `<ProtectedRoute />` avvolge specificamente le rotte `/group` e `/ricerca`.
+- **Integrazione Navbar:** Aggiunto il link "Ricerca" con l'icona della lente di ingrandimento (`Search` da Lucide-React). Il link applica dinamicamente stili visivi differenti per indicare la pagina attiva (`isActive`).
+
+### Tecnologie
+
+| Componente           | Libreria / Funzionalità                                  |
+|----------------------|----------------------------------------------------------|
+| Gestione Rotte       | `react-router-dom` (`Routes`, `Route`, `Outlet`, `Maps`) |
+| Iconografia          | `lucide-react`                                           |
+| UI Framework         | Tailwind CSS (classi utility per styling e hover states) |
+
+## SS-FE-02 — Form Ricerca Semantica
+
+| Campo        | Valore                                                                                                    |
+|--------------|-----------------------------------------------------------------------------------------------------------|
+| **Stato** | ✅ Completato                                                                                             |
+| **Priorità** | Alta                                                                                                      |
+| **File** | `src/pages/SearchPage.tsx`                                                                                |
+
+### Descrizione
+Creazione dell'interfaccia utente per l'inserimento dei parametri di ricerca semantica. È stato implementato un form reattivo con validazione lato client sia per la query di testo (obbligatoria) che per il parametro `topK` (limitato a un range tra 1 e 50).
+
+### Come è implementato
+- **UI Design:** Utilizzo dei componenti della libreria **Shadcn UI** (`Card`, `Input`, `Button`, `Label`) per mantenere un design pulito, accessibile e coerente con il resto dell'applicazione.
+- **Gestione Stato:** Utilizzo dell'hook `useState` di React per controllare i valori degli input (`query`, `topK`) in tempo reale.
+- **Validazione:** Funzione `handleSearch` che intercetta il submit del form (`e.preventDefault()`), verifica la validità dei dati e gestisce la visualizzazione di eventuali messaggi di errore (`error` state) prima di procedere alla chiamata API.
+- **Responsività:** Layout flessibile gestito tramite classi Tailwind (`flex-col sm:flex-row`) per adattare i campi di input e il bottone agli schermi dei dispositivi mobili.
+
+### Tecnologie
+
+| Componente       | Libreria / Pattern                                      |
+|------------------|---------------------------------------------------------|
+| UI Components    | Shadcn UI, Tailwind CSS, Lucide-React (Icone)           |
+| State Management | React Hooks (`useState`)                                |
+| Event Handling   | React Form Events (`onSubmit`, `onChange`)              |
+
+## SS-FE-03 — Integrazione API Ricerca Semantica
+
+| Campo        | Valore                                                                                                    |
+|--------------|-----------------------------------------------------------------------------------------------------------|
+| **Stato** | ✅ Completato                                                                                             |
+| **Priorità** | Alta                                                                                                      |
+| **File** | `src/pages/SearchPage.tsx`                                                                                |
+
+### Descrizione
+Integrazione del form di ricerca con l'endpoint backend `POST /api/v1/search`. Il sistema ora gestisce l'intero ciclo di vita della richiesta asincrona, prevenendo problemi di performance e sovrapposizione di dati (race conditions) durante le ricerche multiple o i cambi di pagina veloci.
+
+### Come è implementato
+- **Chiamata API Autenticata:** Utilizzo della `Fetch API` nativa, iniettando il token JWT recuperato dal `localStorage` nell'header `Authorization`.
+- **Prevenzione Race Conditions:** Implementazione di un `AbortController` persistito tramite l'hook `useRef`. Se viene avviata una nuova ricerca mentre la precedente è in corso, la vecchia chiamata di rete viene interrotta istantaneamente. Il controller pulisce anche le chiamate pendenti se l'utente cambia pagina (gestito tramite la cleanup function di `useEffect`).
+- **UX e Loading State:** Introduzione di uno stato `isLoading` che disabilita interattivamente gli input e i bottoni (per evitare invii multipli accidentali) e mostra uno spinner animato (`Loader2` di Lucide-React) durante l'attesa.
+- **Rendering Dinamico Risultati:** I dati restituiti dal backend vengono mappati su una lista di componenti `Card` (Shadcn UI), mostrando in modo pulito il contenuto del documento trovato e la percentuale di pertinenza (Score).
+
+### Tecnologie
+
+| Componente           | Libreria / API Nativa                                    |
+|----------------------|----------------------------------------------------------|
+| Network Request      | Fetch API                                                |
+| Gestione Concorrenza | `AbortController`, `AbortSignal`                         |
+| Reactivity           | React Hooks (`useEffect`, `useRef`, `useState`)          |
+
+## SS-FE-04 — UI Risultati Ricerca
+
+| Campo        | Valore                                                                                                                        |
+|--------------|-------------------------------------------------------------------------------------------------------------------------------|
+| **Stato**    | ✅ Completato                                                                                                                 |
+| **Priorità** | Alta                                                                                                                          |
+| **File**     | `src/search_service/SearchResultCard.tsx`, `src/search_service/SearchResultSkeleton.tsx`, `src/pages/SearchPage.tsx`          |
+
+### Descrizione
+Implementazione dell'interfaccia di visualizzazione dei risultati della ricerca semantica. I risultati vengono ora presentati tramite componenti dedicati e riutilizzabili, con indicazione visiva della pertinenza (score), del nome del documento, e del relativo snippet testuale. È stato migliorato anche il feedback visivo durante il caricamento tramite card skeleton animate.
+
+### Come è implementato
+- **Componente `SearchResultCard`:** Componente riutilizzabile (già predisposto per SS-FE-05) che riceve un singolo risultato e ne mostra il rank (badge numerico), il filename con icona, lo score come badge colorato (verde ≥80%, giallo ≥60%, rosso <60%) con barra di progresso visiva, e lo snippet con possibilità di espansione tramite bottone "Mostra tutto" / "Mostra meno" per testi lunghi oltre 280 caratteri.
+- **Componente `SearchResultSkeleton`:** Sostituisce il singolo spinner durante il caricamento con un numero configurabile di card skeleton animate, costruite con il componente `Skeleton` di Shadcn UI, rispecchiando fedelmente la struttura di `SearchResultCard`.
+- **Aggiornamento `SearchPage`:** La logica di rendering inline è stata estratta nei componenti dedicati. È stato aggiunto un header descrittivo sopra la lista che mostra il conteggio dei risultati e la query effettuata (es. *"5 risultati per: 'procedure ferie'"*). L'empty state è stato migliorato con l'icona `SearchX` di Lucide-React e un messaggio contestuale che riporta la query cercata.
+- **Normalizzazione Score:** La logica di normalizzazione dello score (gestione `score > 1` vs `score * 100`) è stata centralizzata in `SearchResultCard` tramite la funzione `normalizeScore`, eliminando la logica duplicata presente in precedenza in `SearchPage`.
+
+### Tecnologie
+
+| Componente          | Libreria / Pattern                                        |
+|---------------------|-----------------------------------------------------------|
+| UI Components       | Shadcn UI (`Card`, `Skeleton`), Tailwind CSS              |
+| Iconografia         | `lucide-react` (`FileText`, `ChevronDown`, `ChevronUp`, `SearchX`) |
+| State Management    | React Hooks (`useState`)                                  |
+| Pattern             | Composizione componenti, separazione responsabilità       |
