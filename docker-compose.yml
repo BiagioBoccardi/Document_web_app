@@ -62,6 +62,7 @@ services:
     environment:
       - SERVICE_TYPE=USER_SERVICE
       - DB_HOST=postgres-db
+      - RABBITMQ_HOST=rabbitmq
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - JWT_SECRET=una-chiave-molto-lunga-e-casuale-123!

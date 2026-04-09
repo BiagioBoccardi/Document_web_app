@@ -3,6 +3,8 @@ package com.example.notification_service.entity;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -34,9 +36,11 @@ public class Notification {
     @Column( nullable = false)
     private String stato; // `PENDING`, `SENT`, `READ`, `FAILED`
     @Column(name = "created_at", nullable = false, updatable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
     @Column(name = "read_at")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime readAt;
 
     @PrePersist

@@ -5,6 +5,7 @@ import org.hibernate.SessionFactory;
 import com.example.user_service.config.HibernateUtil;
 import com.example.user_service.controller.GruppoController;
 import com.example.user_service.controller.UserController;
+import com.example.user_service.messaging.EventProducer;
 import com.example.user_service.repository.GruppoRepository;
 import com.example.user_service.repository.UserRepository;
 import com.example.user_service.service.GruppoService;
@@ -31,12 +32,15 @@ public class UserServiceApplication {
         // Usiamo l'utility invece di creare la configurazione qui a mano
         SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
 
+        // --- Messaging ---
+        EventProducer eventProducer = new EventProducer();
+
         // --- Repository ---
         UserRepository userRepository = new UserRepository(sessionFactory);
         GruppoRepository gruppoRepository = new GruppoRepository(sessionFactory);
 
         // --- Service ---
-        UserService userService = new UserService(userRepository);
+        UserService userService = new UserService(userRepository, eventProducer);
         GruppoService gruppoService = new GruppoService(gruppoRepository, userRepository);
 
         // --- Controller ---
