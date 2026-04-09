@@ -2,7 +2,7 @@
 
 ## Scopo e perimetro
 
-Questo documento dettaglia i task funzionali da implementare **solo per il microservizio 2 - Document Service (porta 82)**, sulla base di `README.md` (requisiti funzionali) e `Microservizi.md` (responsabilita, API, eventi e stack del servizio).
+Questo documento dettaglia i task funzionali da implementare **solo per il microservizio 2 - Document Service (porta 8082)**, sulla base di `README.md` (requisiti funzionali) e `Microservizi.md` (responsabilita, API, eventi e stack del servizio).
 
 
 

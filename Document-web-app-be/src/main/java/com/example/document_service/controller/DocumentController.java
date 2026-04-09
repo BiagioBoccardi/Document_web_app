@@ -23,6 +23,12 @@ public class DocumentController {
     public DocumentController(DocumentService documentService) { this.documentService = documentService; }
 
     public void registerRoutes(Javalin app) {
+        registerRoutes(app, null);
+    }
+    public void registerRoutes(Javalin app, DocumentAuthMiddleware authMiddleware) {
+        if (authMiddleware != null) {
+            app.before("/api/v1/documents*", authMiddleware::authenticate);
+        }
         app.post("/api/v1/documents", this::uploadDocument);
         app.get("/api/v1/documents", this::getUserDocuments);
         app.get("/api/v1/documents/{id}", this::getDocumentById);

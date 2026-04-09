@@ -8,6 +8,7 @@ import com.auth0.jwt.interfaces.JWTVerifier;
 import com.example.document_service.exception.UnauthorizedException;
 
 import io.javalin.http.Context;
+import io.javalin.http.HandlerType;
 
 public class DocumentAuthMiddleware {
     public static final String USER_ID_CONTEXT_KEY = "authenticatedUserId";
@@ -26,6 +27,12 @@ public class DocumentAuthMiddleware {
     }
 
     public void authenticate(Context context) {
+
+        // fondamentale per CORS
+        if (context.method() == HandlerType.OPTIONS) {
+            return;
+        }
+
         Long userIdFromToken = extractUserIdFromBearerToken(context.header(AUTHORIZATION_HEADER));
         if (userIdFromToken != null) {
             context.attribute(USER_ID_CONTEXT_KEY, userIdFromToken);
