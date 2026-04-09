@@ -28,7 +28,7 @@ public class DocumentAuthMiddleware {
 
     public void authenticate(Context context) {
 
-        // 🔥 fondamentale per CORS
+        // fondamentale per CORS
         if (context.method() == HandlerType.OPTIONS) {
             return;
         }
