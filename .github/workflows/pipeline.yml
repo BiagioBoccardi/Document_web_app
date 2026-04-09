@@ -27,7 +27,7 @@ jobs:
       # 3. Compila e lancia i test
       - name: Build JAR with Maven
         working-directory: ./Document-web-app-be
-        run: mvn clean package -DskipTests # Rimuovi -DskipTests se hai unit test pronti
+        run: mvn clean package
 
       # 4. Creazione dell'immagine Docker (verifica che il Dockerfile funzioni)
       - name: Build Backend Docker Image
@@ -43,7 +43,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '19'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: './Document-web-app-fe/package-lock.json'
 
@@ -51,6 +51,7 @@ jobs:
         working-directory: ./Document-web-app-fe
         run: |
           npm install
+          npm run lint
           npm run build
 
       - name: Build Frontend Docker Image
