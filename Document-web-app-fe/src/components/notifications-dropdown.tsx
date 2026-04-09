@@ -28,7 +28,9 @@ export const NotificationsDropdown = () => {
     };
 
     const formatDate = (dateString: string) => {
+        if (!dateString) return "Data non disponibile";
         const date = new Date(dateString);
+        if (isNaN(date.getTime())) return "Data non valida";
         return date.toLocaleDateString('it-IT', {
             day: '2-digit',
             month: '2-digit',

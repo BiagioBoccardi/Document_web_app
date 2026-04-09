@@ -5,9 +5,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class NotificationRequest {
-    private String messaggio;
     private int userId;
+    private String messaggio;
+    private String stato; // `PENDING`, `SENT`, `READ`, `FAILED`
 }

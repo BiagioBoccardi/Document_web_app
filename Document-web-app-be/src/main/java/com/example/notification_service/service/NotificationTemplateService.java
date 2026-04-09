@@ -12,7 +12,7 @@ public class NotificationTemplateService {
     public String generateMessage(String eventType, Map<String, Object> metadata) {
         switch (eventType) {
             case "user.registered":
-                return "Benvenuto sulla piattaforma! Siamo felici di averti con noi."; //
+                return "Benvenuto sulla piattaforma! Siamo felici di averti con noi.";
 
             case "document.uploaded":
                 String fileName = metadata != null ? (String) metadata.getOrDefault("fileName", "documento") : "documento";

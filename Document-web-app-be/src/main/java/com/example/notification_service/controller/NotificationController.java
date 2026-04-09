@@ -54,7 +54,7 @@ public class NotificationController {
 
         try {
             service.markAsRead(notificationId, userId); 
-            ctx.status(HttpStatus.NO_CONTENT); // Risposta idempotente
+            ctx.status(HttpStatus.NO_CONTENT); 
         } catch (RuntimeException e) {
             log.warn("Tentativo di accesso non autorizzato o notifica non trovata: {}", notificationId);
             ctx.status(HttpStatus.NOT_FOUND).json(Map.of("error", e.getMessage())); //
