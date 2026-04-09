@@ -91,7 +91,10 @@ export function GroupsPage() {
   };
 
   // Filtro ricerca
-  const filtered = gruppi.filter((g) =>
+  const userGroups = gruppi.filter((g) =>
+    g.owner.id === currentUser?.id || g.members.some(m => m.id === currentUser?.id)
+  );
+  const filtered = userGroups.filter((g) =>
     g.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -168,8 +171,8 @@ export function GroupsPage() {
                         <p className="text-sm font-semibold text-foreground truncate">{gruppo.name}</p>
                         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                           <Users size={12} />
-                          {gruppo.members.length} {gruppo.members.length === 1 ? "membro" : "membri"} 
-                          <span className="opacity-40">•</span> 
+                          {gruppo.members.length} {gruppo.members.length === 1 ? "membro" : "membri"}
+                          <span className="opacity-40">•</span>
                           owner: <span className="font-medium text-foreground/70">{gruppo.owner.nome}</span>
                         </p>
                       </div>
@@ -187,7 +190,7 @@ export function GroupsPage() {
                       >
                         <UserPlus size={15} />
                       </Button>
-                      
+
                       {isOwner && (
                         <Button
                           variant="ghost"
@@ -230,7 +233,7 @@ export function GroupsPage() {
                                 <Crown size={12} className="text-amber-500" />
                               )}
                             </div>
-                            
+
                             {isOwner && m.id !== gruppo.owner.id && (
                               <Button
                                 variant="ghost"
