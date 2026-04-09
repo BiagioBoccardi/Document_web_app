@@ -41,6 +41,11 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: password
     ports:
       - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Vector Database (IA / Ricerca Semantica)
   qdrant:
@@ -74,12 +79,14 @@ services:
     container_name: document_service
     environment:
       - SERVICE_TYPE=DOCUMENT_SERVICE
-      - MONGO_URI=mongodb://admin:password@mongo-db:27017 # Usa le credenziali di mongo-db
+      #- MONGO_URI=mongodb://admin:password@mongo-db:27017/document_web_app?authSource=admin # MongoDB da docker - Usa le credenziali di mongo-db
+      - MONGO_URI=mongodb://admin:password@host.docker.internal:27017/document_web_app # MongoDB locale 
       - MONGO_DB=document_web_app
     ports:
       - "8082:8080"
     depends_on:
-      - mongo-db
+      mongo-db:
+        condition: service_healthy
 
   search-service:
     build: 

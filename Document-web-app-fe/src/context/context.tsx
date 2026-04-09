@@ -1,11 +1,15 @@
 
-import type { IGruppo, INotification, IUser } from "@/types";
+import type { IGruppo, INotification, IUser, IDocument } from "@/types";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const API_URL = "http://localhost:80";
+const DOCUMENT_SERVICE_URL = "http://localhost:8082";
+
+const DEV_AUTH_BYPASS = true;
+
 
 interface ContextType {
   currentUser: IUser | null;
@@ -18,7 +22,6 @@ interface ContextType {
   loadingGruppi: boolean;
   fetchGruppi: () => Promise<void>;
   fetchUsers: () => Promise<void>;
-  fetchDocuments: () => Promise<void>;
   unreadCount: number;
   loadingNotifications: boolean;
   fetchNotifications: () => Promise<void>;
@@ -28,6 +31,11 @@ interface ContextType {
   deleteGroup: (id: number) => Promise<void>;
   addMembersToGroup: (groupId: number, userIds: number[]) => Promise<void>;
   removeMemberFromGroup: (groupId: number, userId: number) => Promise<void>;
+  documents: IDocument[];
+  loadingDocuments: boolean;
+  fetchDocuments: () => Promise<void>;
+  uploadDocument: (file: File) => Promise<void>;
+  deleteDocument: (id: string) => Promise<void>;
 }
 
 const Context = createContext<ContextType | undefined>(undefined);
@@ -38,6 +46,14 @@ export const ContextProvider = ({
   children: React.ReactNode;
 }) => {
   const [currentUser, setCurrentUser] = useState<IUser | null>(() => {
+    if (DEV_AUTH_BYPASS) return {
+      id: 1,
+      nome: "Developer",
+      email:"dev@local",
+      passwordHash:"",
+      isAdmin: false
+    } // Ritorna un utente di default per bypassare l'autenticazione in fase di sviluppo
+
     try {
       const stored = localStorage.getItem("currentUser");
       if (!stored || stored === "undefined") return null;
@@ -47,6 +63,8 @@ export const ContextProvider = ({
       return null;
     }
   });
+  const [documents, setDocuments] = useState<IDocument[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [gruppi, setGruppi] = useState<IGruppo[]>([]);
   const [users, setUsers] = useState<IUser[]>([]);
   const [loadingGruppi, setLoadingGruppi] = useState(false);
@@ -211,18 +229,74 @@ export const ContextProvider = ({
     await fetchGruppi();
   };
 
-  const fetchDocuments = async () => {
-    const token = localStorage.getItem("token");
-    const res = await fetch(`${API_URL}/api/v1/documents`, {
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "X-User-ID": currentUser?.id.toString() || ""
+  const fetchDocuments = useCallback(async () => {
+      if (!currentUser || loadingDocuments) return;
+      setLoadingDocuments(true);
+      try {
+          const token = localStorage.getItem("token");
+          const headers: Record<string, string> = {
+              "X-User-Id": currentUser.id.toString()
+          };
+          if (token) headers["Authorization"] = `Bearer ${token}`;
+
+          const res = await fetch(`${DOCUMENT_SERVICE_URL}/api/v1/documents`, { headers });
+          if (!res.ok) throw new Error("Errore nel recupero documenti");
+          const data = await res.json();
+          setDocuments(data);
+      } catch (e) {
+          console.error("Errore fetchDocuments:", e);
+          toast.error("Impossibile caricare i documenti.");
+      } finally {
+          setLoadingDocuments(false);
       }
-    });
-    if (!res.ok) throw new Error;
-    const data = await res.json();
-    return data;
-  };
+  }, [currentUser?.id]);
+
+  const uploadDocument = useCallback(async (file: File) => {
+      if (!currentUser) throw new Error("Utente non autenticato");
+
+      const token = localStorage.getItem("token");
+      const headers: Record<string, string> = {
+          "X-User-Id": currentUser.id.toString()
+      };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`${DOCUMENT_SERVICE_URL}/api/v1/documents`, {
+          method: "POST",
+          headers,
+          body: formData,
+      });
+
+      if (!res.ok) {
+          const error = await res.json().catch(() => ({}));
+          throw new Error(error.message || `Errore upload: ${res.status}`);
+      }
+
+      await fetchDocuments();
+  }, [currentUser?.id, fetchDocuments]);
+
+  const deleteDocument = useCallback(async (id: string) => {
+      if (!currentUser) throw new Error("Utente non autenticato");
+
+      const token = localStorage.getItem("token");
+      const headers: Record<string, string> = {
+          "X-User-Id": currentUser.id.toString()
+      };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(`${DOCUMENT_SERVICE_URL}/api/v1/documents/${id}`, {
+          method: "DELETE",
+          headers,
+      });
+
+      if (!res.ok && res.status !== 204) {
+          throw new Error("Errore durante l'eliminazione");
+      }
+
+      setDocuments(prev => prev.filter(d => d.id !== id));
+  }, [currentUser?.id]);
 
   const fetchNotifications = useCallback(async () => {
     if (!currentUser?.id || loadingNotifications) return;
@@ -278,17 +352,25 @@ export const ContextProvider = ({
 
   useEffect(() => {
     const userId = currentUser?.id;
-    
     if (userId && userId !== 0) {
-      fetchNotifications();
-      fetchGruppi();
-      fetchUsers();
+        fetchNotifications();
+        fetchGruppi();
+        fetchUsers();
+        fetchDocuments();
     }
-  }, [currentUser?.id, fetchNotifications, fetchGruppi, fetchUsers]);
+  }, [currentUser?.id, fetchNotifications, fetchGruppi, fetchUsers, fetchDocuments]);
     
 
   return (
-    <Context.Provider value={{ currentUser, fetchSignIn, createUser, signOut, gruppi, users, loadingGruppi, notifications, unreadCount, loadingNotifications, fetchNotifications, markAsRead, deleteNotification, fetchGruppi, fetchUsers, fetchDocuments, createGroup, deleteGroup, addMembersToGroup, removeMemberFromGroup }}>
+    <Context.Provider value={{
+    currentUser, fetchSignIn, createUser, signOut,
+    gruppi, users, loadingGruppi,
+    notifications, unreadCount, loadingNotifications,
+    fetchNotifications, markAsRead, deleteNotification,
+    fetchGruppi, fetchUsers,
+    documents, loadingDocuments, fetchDocuments, uploadDocument, deleteDocument,
+    createGroup, deleteGroup, addMembersToGroup, removeMemberFromGroup
+  }}>
       {children}
     </Context.Provider>
   );
