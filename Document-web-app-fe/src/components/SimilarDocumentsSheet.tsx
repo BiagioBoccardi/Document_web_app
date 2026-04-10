@@ -7,8 +7,10 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import SearchResultCard, { type SearchResult } from "./SearchResultCard";
-import SearchResultSkeleton from "./SearchResultSkeleton";
+import SearchResultCard, {
+  type SearchResult,
+} from "../components/SearchResultCard";
+import SearchResultSkeleton from "../components/SearchResultSkeleton";
 
 interface SimilarDocumentsSheetProps {
   open: boolean;
@@ -101,7 +103,9 @@ export default function SimilarDocumentsSheet({
           ) : (
             <div className="p-8 text-center text-muted-foreground border border-dashed rounded-lg flex flex-col items-center gap-2">
               <FileSearch className="w-8 h-8 text-muted-foreground/50" />
-              <p className="text-sm font-medium">Nessun documento simile trovato</p>
+              <p className="text-sm font-medium">
+                Nessun documento simile trovato
+              </p>
             </div>
           )}
         </div>
