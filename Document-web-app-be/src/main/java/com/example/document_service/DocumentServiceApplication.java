@@ -50,15 +50,16 @@ public class DocumentServiceApplication {
         Javalin app = Javalin.create(config -> {
             config.showJavalinBanner = false;
             config.plugins.enableCors(cors -> {
-                cors.add(it -> it.allowHost("http://localhost:5173", "http://localhost"));
-            });
+                cors.add(it -> {
+                    it.allowHost("http://localhost:5173", "http://localhost");});
+                });
         }).start(port);
 
         DocumentHttpErrorHandler.register(app);
-        app.before("/api/v1/documents*", documentAuthMiddleware::authenticate);
 
         app.get("/health", context -> context.json(Map.of("status", "UP", "service", "document-service")));
-        documentController.registerRoutes(app);
+        
+        documentController.registerRoutes(app, documentAuthMiddleware);
 
         app.events(eventConfig -> eventConfig.serverStopped(documentRepository::close));
 

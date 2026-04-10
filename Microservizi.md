@@ -36,7 +36,7 @@ CREATE TABLE utente (
 
 ---
 
-## 2. Document Service (Port :82)
+## 2. Document Service (Port :8082)
 
 **Responsabilità**: Upload, storage e gestione documenti testuali
 

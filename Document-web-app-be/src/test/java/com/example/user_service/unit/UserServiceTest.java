@@ -1,24 +1,37 @@
 package com.example.user_service.unit;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
-import com.example.user_service.model.User;
-import com.example.user_service.repository.UserRepository;
-import com.example.user_service.service.UserService;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
-import java.util.Optional;
+import com.example.user_service.messaging.EventProducer;
+import com.example.user_service.model.User;
+import com.example.user_service.repository.UserRepository;
+import com.example.user_service.service.UserService;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import at.favre.lib.crypto.bcrypt.BCrypt;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
@@ -31,9 +44,10 @@ class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
-    // ─────────────────────────────────────────────
+    @Mock
+    private EventProducer eventProducer;
+
     // Helper: costruisce un User con password già hashata
-    // ─────────────────────────────────────────────
     private User buildUser(int id, String nome, String email, String plainPassword) {
         User u = new User();
         u.setId(id);
@@ -44,9 +58,7 @@ class UserServiceTest {
         return u;
     }
 
-    // ═════════════════════════════════════════════
     // register()
-    // ═════════════════════════════════════════════
     @Nested
     @DisplayName("register()")
     class Register {
@@ -54,21 +66,28 @@ class UserServiceTest {
         @Test
         @DisplayName("OK: salva utente con password hashata e non admin")
         void shouldRegisterUserSuccessfully() {
-            when(userRepository.findByEmail("mario@example.com"))
-                    .thenReturn(Optional.empty());
-            when(userRepository.save(any(User.class)))
-                    .thenAnswer(inv -> inv.getArgument(0));
+            when(userRepository.findByEmail("mario@example.com")).thenReturn(Optional.empty());
+    
+            // Simulo il comportamento del DB: quando salva, imposta un ID
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+                User u = inv.getArgument(0);
+                u.setId(1); // <--- IMPORTANTE: assegna un ID per evitare NPE nel producer
+                return u;
+            });
 
+            // 2. Esecuzione
             User result = userService.register("Mario", "mario@example.com", "password123");
 
+            // 3. Assertions
             assertAll(
-                    () -> assertEquals("Mario", result.getNome()),
-                    () -> assertEquals("mario@example.com", result.getEmail()),
-                    () -> assertFalse(result.isAdmin()),
-                    // la password NON deve essere salvata in chiaro
-                    () -> assertNotEquals("password123", result.getPasswordHash()),
-                    () -> assertNotNull(result.getPasswordHash())
+                () -> assertEquals("Mario", result.getNome()),
+                () -> assertEquals(1, result.getId()), // Verifica che l'ID sia stato "settato"
+                () -> assertFalse(result.isAdmin()),
+                () -> assertNotEquals("password123", result.getPasswordHash())
             );
+
+            // 4. VERIFICA l'evento (molto importante per la coverage!)
+            verify(eventProducer, times(1)).sendEvent(eq("user.registered"), eq(1), anyMap());
             verify(userRepository, times(1)).save(any(User.class));
         }
 

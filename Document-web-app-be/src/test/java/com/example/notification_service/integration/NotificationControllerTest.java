@@ -1,16 +1,18 @@
-package com.example.notification_service.controller;
+package com.example.notification_service.integration;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.example.notification_service.NotificationServiceApplication;
 
 import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
-import org.junit.jupiter.api.Test;
-import com.example.notification_service.service.NotificationService;
-import com.example.notification_service.NotificationServiceApplication;
-import static org.mockito.Mockito.*;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class NotificationControllerTest {
     // Utilizziamo JavalinTest per avviare un server temporaneo durante il test
     @Test
+    @DisplayName("Test: Accesso negato senza Header di autenticazione")
     void testListNotifications_Unauthorized() {
         Javalin app = new NotificationServiceApplication().getJavalinInstance(); // Metodo per ottenere l'istanza app
 
@@ -24,6 +26,7 @@ public class NotificationControllerTest {
     }
 
     @Test
+    @DisplayName("Test: Recupero lista notifiche con successo")
     void testListNotifications_Success() {
 
         com.example.notification_service.config.HibernateUtil.getSessionFactory();
@@ -35,11 +38,12 @@ public class NotificationControllerTest {
             var response = client.get("/api/v1/notifications", q -> q.header("X-User-ID", "1"));
             
             assertThat(response.code()).isEqualTo(200);
-            assertThat(response.body().string()).contains("["); // Verifica che restituisca un array JSON
+            assertThat(response.body().string()).contains("["); 
         });
     }
 
     @Test
+    @DisplayName("Test: Segna come letta una notifica inesistente")
     void testMarkAsRead_NotFound() {
         Javalin app = new NotificationServiceApplication().getJavalinInstance();
 
@@ -51,7 +55,7 @@ public class NotificationControllerTest {
             .when()
                 .put("/api/v1/notifications/" + java.util.UUID.randomUUID() + "/read")
             .then()
-                .statusCode(org.hamcrest.Matchers.not(200)); // Verifichiamo che NON sia 200
+                .statusCode(org.hamcrest.Matchers.not(200)); 
         });
     }
 }

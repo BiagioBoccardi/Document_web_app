@@ -22,3 +22,18 @@ export interface INotification {
   createdAt: string;
   readAt?: string;
 }
+
+export interface IDocument {
+    id: string;
+    userId: number;
+    filename: string;
+    content: string;
+    uploadDate: string;
+    lastModified: string;
+    metadata: {
+        size: number;
+        mimeType: string;
+        checksum: string;
+        fileType: string;
+    };
+}
