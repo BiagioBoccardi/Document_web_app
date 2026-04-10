@@ -25,8 +25,10 @@ public class SearchService {
     private static final String QDRANT_COLLECTION_NAME = "documents";
 
     public static void main(String[] args) {
-        int port = DotenvConfig.getAsInt("SEARCH_SERVICE_PORT", 83);
+        start(DotenvConfig.getAsInt("SEARCH_SERVICE_PORT", 83));
+    }
 
+    public static void start(int port) {
         // Inizializzazione Qdrant
         QdrantClient qdrantClient = QdrantClientFactory.createClient();
         setupQdrantCollection(qdrantClient);

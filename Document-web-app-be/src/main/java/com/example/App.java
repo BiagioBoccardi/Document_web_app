@@ -2,6 +2,7 @@ package com.example;
 
 import com.example.document_service.DocumentServiceApplication;
 import com.example.notification_service.NotificationServiceApplication;
+import com.example.search_service.SearchService;
 import com.example.user_service.UserServiceApplication;
 
 import lombok.extern.slf4j.Slf4j;
@@ -25,12 +26,12 @@ public class App {
                 log.info("MODALITÀ MULTI-SERVIZIO: Avvio di tutti i microservizi disponibili...");
                 startUserService(8081);
                 startDocumentService(8082);
+                startSearchService(8083);
                 startNotificationService(8084);
-                log.info("Nota: search-service non avviato (ancora da implementare).");
             }
             case "USER_SERVICE" -> startUserService(defaultPort);
             case "NOTIFICATION_SERVICE" -> startNotificationService(defaultPort);
-            case "SEARCH_SERVICE" -> startSearchService();
+            case "SEARCH_SERVICE" -> startSearchService(defaultPort);
             case "DOCUMENT_SERVICE" -> startDocumentService(defaultPort);
             default -> {
                 log.error("Servizio sconosciuto: {}", serviceType);
@@ -50,9 +51,9 @@ public class App {
         notificationApplication.start(port); 
     }
 
-    private static void startSearchService() {
-        log.info("Inizializzazione Search Service su Elasticsearch...");
-        // SearchServiceApplication.start(); // da implementare
+    private static void startSearchService(int port) {
+        log.info("Inizializzazione Search Service su Qdrant...");
+        SearchService.start(port);
     }
 
     private static void startDocumentService(int port) {

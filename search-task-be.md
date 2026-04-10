@@ -496,7 +496,33 @@ Sono state introdotte tre difese principali utilizzando la libreria **Resilience
 ### SS-FE-01 — Routing pagina protetta `Ricerca Semantica`
 
 | Campo        | Valore                                                                                                    |
-|--------------|-----------------------------------------------------------------------------------------------------------|
+|--------------|-------------------------------------------------sers\biagi\Desktop\progetti Infobasic\Develops\Document_web_app\search-task-be.md
+perfetto dimmi cosa hai fatto nell'ultimo task cosi so cosa testare
+Ecco cosa testare per SS-FE-04:
+
+Cosa è cambiato visivamente
+Card risultati — ogni risultato ora mostra:
+
+Badge numerico con il rank (1°, 2°, 3°...)
+Filename con icona a sinistra
+Score badge colorato in alto a destra:
+Verde se ≥ 80%
+Giallo se ≥ 60%
+Rosso se < 60%
+Barra di progresso (visibile da sm in su) che riflette lo score
+Snippet in stile citazione corsivo con bordo a sinistra
+Bottone "Mostra tutto / Mostra meno" se il testo supera 280 caratteri
+ID documento in piccolo sotto il filename (se presente nel payload)
+Casi da testare
+Ricerca con risultati — verifica rank, score color, snippet
+Snippet lungo — controlla che il testo venga troncato e che il bottone espandi/collassi funzioni
+Loading state — mentre la risposta arriva devono comparire le skeleton card animate (non lo spinner)
+Empty state — ricerca senza risultati deve mostrare l'icona SearchX con la query usata nel messaggio
+Header risultati — deve mostrare "(N) risultati per: 'tua query'" dopo la risposta
+File coinvolti
+SearchResultCard.tsx
+SearchResultSkeleton.tsx
+SearchPage.tsx----------------------------------------------------------|
 | **Stato** | ✅ Completato                                                                                             |
 | **Priorità** | Alta                                                                                                      |
 | **File** | `App.tsx`, `components/protected-route.tsx`, `pages/SearchPage.tsx`, `components/navbar.tsx`              |

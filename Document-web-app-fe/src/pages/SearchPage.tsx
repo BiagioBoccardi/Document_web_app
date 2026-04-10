@@ -6,6 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import SearchResultCard, { type SearchResult } from "@/search_service/SearchResultCard";
 import SearchResultSkeleton from "@/search_service/SearchResultSkeleton";
+import SimilarDocumentsSheet from "@/search_service/SimilarDocumentsSheet";
+
+interface SimilarTarget {
+  documentId: string;
+  filename?: string;
+}
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
@@ -16,6 +22,8 @@ export default function SearchPage() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [lastQuery, setLastQuery] = useState("");
+
+  const [similarTarget, setSimilarTarget] = useState<SimilarTarget | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -66,11 +74,12 @@ export default function SearchPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Errore durante la comunicazione con il server di ricerca.");
+        const body = await response.text();
+        throw new Error(`Errore ${response.status}: ${body || response.statusText}`);
       }
 
       const data = await response.json();
-      setResults(data);
+      setResults(data.results ?? []);
       setIsLoading(false);
     } catch (err: any) {
       if (err.name === "AbortError") {
@@ -174,7 +183,16 @@ export default function SearchPage() {
             <SearchResultSkeleton count={topK > 3 ? 3 : topK} />
           ) : results.length > 0 ? (
             results.map((res, index) => (
-              <SearchResultCard key={res.id ?? res.documentId ?? index} result={res} rank={index + 1} />
+              <SearchResultCard
+                key={res.id ?? res.documentId ?? index}
+                result={res}
+                rank={index + 1}
+                onSimilarClick={
+                  res.documentId
+                    ? () => setSimilarTarget({ documentId: res.documentId!, filename: res.filename })
+                    : undefined
+                }
+              />
             ))
           ) : (
             <div className="p-10 text-center text-muted-foreground border border-dashed rounded-lg flex flex-col items-center gap-3">
@@ -190,6 +208,13 @@ export default function SearchPage() {
           )}
         </div>
       )}
+
+      <SimilarDocumentsSheet
+        open={!!similarTarget}
+        onClose={() => setSimilarTarget(null)}
+        documentId={similarTarget?.documentId ?? ""}
+        filename={similarTarget?.filename}
+      />
     </div>
   );
 }
