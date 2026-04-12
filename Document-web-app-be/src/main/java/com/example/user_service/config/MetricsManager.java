@@ -1,5 +1,7 @@
 package com.example.user_service.config;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 
 import com.influxdb.client.InfluxDBClient;
@@ -8,33 +10,46 @@ import com.influxdb.client.WriteApiBlocking;
 import com.influxdb.client.domain.WritePrecision;
 import com.influxdb.client.write.Point;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class MetricsManager {
     private final InfluxDBClient client;
     private final String bucket;
-    private final String org;
+    private final String influxOrg;
 
     public MetricsManager() {
-        // Leggi le config dalle variabili d'ambiente del docker-compose
+        this.influxOrg = System.getenv().getOrDefault("INFLUXDB_ORG", "docs");
+        this.bucket = System.getenv().getOrDefault("INFLUXDB_BUCKET", "home");
         String url = System.getenv().getOrDefault("INFLUXDB_URL", "http://influxdb2:8086");
-        String token = System.getenv("INFLUXDB_TOKEN"); // Il token generato al setup
-        this.org = "docs";
-        this.bucket = "home";
+        String tokenFilePath = System.getenv("INFLUXDB_TOKEN_FILE");
 
-        this.client = InfluxDBClientFactory.create(url, token.toCharArray(), org, bucket);
+        String token = "";
+        try {
+            // Legge il token dal file montato da Docker Secrets
+            token = new String(Files.readAllBytes(Paths.get(tokenFilePath))).trim();
+        } catch (Exception e) {
+            log.error("Errore critico: Impossibile leggere il token InfluxDB dal file secret!", e);
+        }
+
+        this.client = InfluxDBClientFactory.create(url, token.toCharArray(), influxOrg, bucket);
     }
 
     public void logEvent(String measurement, String tagKey, String tagValue, String field, Object value) {
-        WriteApiBlocking writeApi = client.getWriteApiBlocking();
+        try {
+            WriteApiBlocking writeApi = client.getWriteApiBlocking();
+            Point point = Point.measurement(measurement)
+                    .addTag(tagKey, tagValue)
+                    .addField(field, (Number) value)
+                    .time(Instant.now(), WritePrecision.NS);
 
-        Point point = Point.measurement(measurement)
-                .addTag(tagKey, tagValue)
-                .addField(field, (Number) value)
-                .time(Instant.now(), WritePrecision.NS);
-
-        writeApi.writePoint(bucket, org, point);
+            writeApi.writePoint(bucket, influxOrg, point);
+        } catch (Exception e) {
+            log.warn("Invio metrica fallito: {}", e.getMessage());
+        }
     }
 
     public void shutdown() {
-        client.close();
+        if (client != null) client.close();
     }
 }

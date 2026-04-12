@@ -3,6 +3,7 @@ package com.example.user_service;
 import org.hibernate.SessionFactory;
 
 import com.example.user_service.config.HibernateUtil;
+import com.example.user_service.config.MetricsManager;
 import com.example.user_service.controller.GruppoController;
 import com.example.user_service.controller.UserController;
 import com.example.user_service.messaging.EventProducer;
@@ -32,6 +33,9 @@ public class UserServiceApplication {
         // Usiamo l'utility invece di creare la configurazione qui a mano
         SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
 
+        // --- InfluxDB Metrics Manager ---
+        MetricsManager metricsManager = new MetricsManager();
+
         // --- Messaging ---
         EventProducer eventProducer = new EventProducer();
 
@@ -40,7 +44,7 @@ public class UserServiceApplication {
         GruppoRepository gruppoRepository = new GruppoRepository(sessionFactory);
 
         // --- Service ---
-        UserService userService = new UserService(userRepository, eventProducer);
+        UserService userService = new UserService(userRepository, eventProducer, metricsManager);
         GruppoService gruppoService = new GruppoService(gruppoRepository, userRepository);
 
         // --- Controller ---

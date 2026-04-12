@@ -67,11 +67,20 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - JWT_SECRET=una-chiave-molto-lunga-e-casuale-123!
+      # --- Configurazione InfluxDB ---
+      - INFLUXDB_URL=http://influxdb2:8086
+      - INFLUXDB_ORG=docs
+      - INFLUXDB_BUCKET=home
+      - INFLUXDB_TOKEN_FILE=/run/secrets/influxdb2-admin-token
+    secrets:
+      - influxdb2-admin-token
     ports:
       - "8081:8080" # Mappa la porta 8080 interna sulla 8081 esterna
     depends_on:
       postgres-db:
         condition: service_healthy
+      influxdb2:
+        condition: service_started
 
 
   document-service:

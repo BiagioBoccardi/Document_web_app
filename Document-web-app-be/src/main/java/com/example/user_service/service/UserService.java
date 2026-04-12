@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.example.user_service.config.MetricsManager;
 import com.example.user_service.messaging.EventProducer;
 import com.example.user_service.model.User;
 import com.example.user_service.repository.UserRepository;
@@ -16,10 +17,13 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final EventProducer eventProducer;
+    private final MetricsManager metricsManager;
 
-    public UserService(UserRepository userRepository, EventProducer eventProducer) {
+
+    public UserService(UserRepository userRepository, EventProducer eventProducer, MetricsManager metricsManager) {
         this.userRepository = userRepository;
         this.eventProducer = eventProducer;
+        this.metricsManager = metricsManager;
     }
 
     public User register(String nome, String email, String plainPassword) {
@@ -38,6 +42,9 @@ public class UserService {
         user.setPasswordHash(hash);
 
         User savedUser = userRepository.save(user); 
+
+        // Log di metrica di influxdb
+        metricsManager.logEvent("user_registrations", "status", "success", "user_email", email);
         
         // Invia evento di registrazione a RabbitMQ
         eventProducer.sendEvent(
