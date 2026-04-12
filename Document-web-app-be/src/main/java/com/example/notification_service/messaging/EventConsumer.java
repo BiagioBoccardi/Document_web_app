@@ -2,6 +2,7 @@ package com.example.notification_service.messaging;
 
 import java.nio.charset.StandardCharsets;
 
+import com.example.notification_service.config.MetricsManager;
 import com.example.notification_service.service.NotificationService;
 import com.example.notification_service.service.NotificationTemplateService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 public class EventConsumer {
     private final NotificationService notificationService;
     private final NotificationTemplateService templateService;
+    private final MetricsManager metricsManager;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String QUEUE_NAME = "notification_queue";
     
@@ -31,7 +34,7 @@ public class EventConsumer {
         while (attempts < maxAttempts) {
             try {
                 ConnectionFactory factory = new ConnectionFactory();
-                // Assicurati che l'host sia "rabbitmq" come nel docker-compose
+                // L'host deve essere "rabbitmq" come nel docker-compose
                 factory.setHost(System.getenv().getOrDefault("RABBITMQ_HOST", "localhost"));
                 
                 this.connection = factory.newConnection();
@@ -41,12 +44,27 @@ public class EventConsumer {
                 
                 DeliverCallback deliverCallback = (consumerTag, delivery) -> {
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
+                    long startTime = System.currentTimeMillis();
+
                     try {
                         GenericEvent event = objectMapper.readValue(message, GenericEvent.class);
+
+                        // Calcolo della latenza end-to-end
+                        if (event.getMetadata() != null && event.getMetadata().containsKey("published_at")) {
+                            long publishedAt = ((Number) event.getMetadata().get("published_at")).longValue();
+                            long latency = startTime - publishedAt;
+                            
+                            // Logga la latenza in InfluxDB
+                            metricsManager.logEvent("notification_latency", "event_type", event.getType(), "ms", latency);
+                        }
+
                         processEvent(event);
+                        metricsManager.logEvent("notification_status", "status", "success", "count", 1);
                         channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+
                     } catch (Exception e) {
                         log.error("Errore elaborazione evento: {}", message, e);
+                        metricsManager.logEvent("notification_status", "status", "failure", "count", 1);
                         channel.basicNack(delivery.getEnvelope().getDeliveryTag(), false, true);
                     }
                 };
@@ -80,7 +98,6 @@ public class EventConsumer {
         // Il TemplateService genera già il messaggio completo usando i metadata
         String message = templateService.generateMessage(event.getType(), event.getMetadata());
 
-        // Ora la logica è centralizzata: il service crea la notifica indipendentemente dal tipo
         if (message != null) {
             notificationService.createNotification(event.getUserId(), message);
             log.debug("Notifica persistita per l'evento {}", event.getType());

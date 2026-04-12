@@ -1,6 +1,7 @@
 package com.example.notification_service;
 
 import com.example.notification_service.config.HibernateUtil;
+import com.example.notification_service.config.MetricsManager;
 import com.example.notification_service.controller.NotificationController;
 import com.example.notification_service.messaging.EventConsumer;
 import com.example.notification_service.repository.NotificationRepository;
@@ -21,13 +22,15 @@ public class NotificationServiceApplication {
     private final Javalin app;
     private final NotificationController notificationController;
     private final EventConsumer eventConsumer;
+    private final MetricsManager metricsManager;
 
     public NotificationServiceApplication() {
         NotificationRepository repository = new NotificationRepository();
         NotificationService notificationService = new NotificationService(repository);
         NotificationTemplateService templateService = new NotificationTemplateService();
+        this.metricsManager = new MetricsManager();
         this.notificationController = new NotificationController(notificationService);
-        this.eventConsumer = new EventConsumer(notificationService, templateService);
+        this.eventConsumer = new EventConsumer(notificationService, templateService, metricsManager);
 
         // Configurazione Javalin
         this.app = Javalin.create(config -> {

@@ -90,7 +90,6 @@ services:
     environment:
       - SERVICE_TYPE=DOCUMENT_SERVICE
       - MONGO_URI=mongodb://admin:password@mongo-db:27017/document_web_app?authSource=admin # MongoDB da docker - Usa le credenziali di mongo-db
-      #- MONGO_URI=mongodb://admin:password@host.docker.internal:27017/document_web_app # MongoDB locale 
       - MONGO_DB=document_web_app
       - JWT_SECRET=una-chiave-molto-lunga-e-casuale-123!
     ports:
@@ -121,6 +120,13 @@ services:
       - DB_HOST=postgres-db
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      # --- Configurazione InfluxDB ---
+      - INFLUXDB_URL=http://influxdb2:8086
+      - INFLUXDB_ORG=docs
+      - INFLUXDB_BUCKET=home
+      - INFLUXDB_TOKEN_FILE=/run/secrets/influxdb2-admin-token
+    secrets:
+      - influxdb2-admin-token
     ports:
       - "8084:8080"
     depends_on:
@@ -128,6 +134,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      influxdb2:
+        condition: service_started
 
     # --- API GATEWAY (NGINX) ---
   gateway:

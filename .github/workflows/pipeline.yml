@@ -56,4 +56,4 @@ jobs:
 
       - name: Build Frontend Docker Image
         working-directory: ./Document-web-app-fe
-        run: docker build -t document-fe:latest .
+        run: docker build -t document_web_app-frontend:latest .

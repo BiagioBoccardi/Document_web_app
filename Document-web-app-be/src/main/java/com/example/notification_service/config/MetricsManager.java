@@ -1,4 +1,4 @@
-package com.example.user_service.config;
+package com.example.notification_service.config;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -35,13 +35,21 @@ public class MetricsManager {
         this.client = InfluxDBClientFactory.create(url, token.toCharArray(), influxOrg, bucket);
     }
 
-    public void logRegistrationMetrics(String email) {
+    public void logEvent(String measurement, String tagKey, String tagValue, String field, Object value) {
         try {
             WriteApiBlocking writeApi = client.getWriteApiBlocking();
-            Point point = Point.measurement("user_registrations")
-                    .addTag("status", "success")
-                    .addField("count", 1L)
+            Point point = Point.measurement(measurement)
+                    .addTag(tagKey, tagValue)
+                    .addField(field, (Number) value)
                     .time(Instant.now(), WritePrecision.NS);
+
+            if (value instanceof Number) {
+                point.addField(field, (Number) value);
+            } else if (value instanceof String) {
+                point.addField(field, (String) value);
+            } else if (value instanceof Boolean) {
+                point.addField(field, (Boolean) value);
+            }
 
             writeApi.writePoint(bucket, influxOrg, point);
         } catch (Exception e) {

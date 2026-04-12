@@ -43,15 +43,16 @@ public class UserService {
 
         User savedUser = userRepository.save(user); 
 
+        Map<String, Object> metadata = Map.of(
+            "nome", savedUser.getNome(),
+            "published_at", System.currentTimeMillis()
+        );
+
         // Log di metrica di influxdb
-        metricsManager.logEvent("user_registrations", "status", "success", "user_email", email);
+        metricsManager.logRegistrationMetrics(email);
         
         // Invia evento di registrazione a RabbitMQ
-        eventProducer.sendEvent(
-            "user.registered", 
-            savedUser.getId(), 
-            Map.of("nome", savedUser.getNome())
-        );
+        eventProducer.sendEvent("user.registered", savedUser.getId(), metadata);
 
         return savedUser;
     }
