@@ -32,7 +32,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # Database NoSQL (Content Service)
+  # Database NoSQL MongoDB (Content Service)
   mongo-db:
     image: mongo:latest
     container_name: mongo_db

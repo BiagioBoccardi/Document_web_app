@@ -32,7 +32,10 @@ interface ContextType {
   documents: IDocument[];
   loadingDocuments: boolean;
   fetchDocuments: () => Promise<void>;
+  fetchDocumentById: (id: string) => Promise<any>;
+  downloadDocument: (id: string, filename: string) => Promise<void>;
   uploadDocument: (file: File) => Promise<void>;
+  updateDocument: (id: string, filename: string, content: string) => Promise<void>;
   deleteDocument: (id: string) => Promise<void>;
 }
 
@@ -242,6 +245,59 @@ export const ContextProvider = ({
       }
   }, [currentUser?.id]);
 
+  const fetchDocumentById = useCallback(async (id: string) => {
+      if (!currentUser) throw new Error("Utente non autenticato");
+
+      const token = localStorage.getItem("token");
+      const headers: Record<string, string> = {
+          "X-User-Id": currentUser.id.toString()
+      };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(`${DOCUMENT_SERVICE_URL}/api/v1/documents/${id}`, {
+          headers,
+      });
+
+      if (!res.ok) {
+          throw new Error("Errore nel recupero documento");
+      }
+
+      return await res.json();
+  }, [currentUser?.id]);
+
+  const downloadDocument = useCallback(async (id: string, filename: string) => {
+      if (!currentUser) throw new Error("Utente non autenticato");
+
+      const token = localStorage.getItem("token");
+
+      if (!token) throw new Error("Token mancante");
+
+      const res = await fetch(`${DOCUMENT_SERVICE_URL}/api/v1/documents/${id}/download`, {
+          method: "GET",
+          headers: {
+              "Authorization": `Bearer ${token ?? ""}`,
+              "X-User-Id": currentUser.id.toString()
+          }
+      });
+
+      if (!res.ok) {
+          const msg = await res.text().catch(() => "");
+          throw new Error(msg || "Errore download documento");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+  }, [currentUser?.id]);
+
   const uploadDocument = useCallback(async (file: File) => {
       if (!currentUser) throw new Error("Utente non autenticato");
 
@@ -263,6 +319,30 @@ export const ContextProvider = ({
       if (!res.ok) {
           const error = await res.json().catch(() => ({}));
           throw new Error(error.message || `Errore upload: ${res.status}`);
+      }
+
+      await fetchDocuments();
+  }, [currentUser?.id, fetchDocuments]);
+
+  const updateDocument = useCallback(async (id: string, filename: string, content: string) => {
+      if (!currentUser) throw new Error("Utente non autenticato");
+
+      const token = localStorage.getItem("token");
+      const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          "X-User-Id": currentUser.id.toString()
+      };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(`${DOCUMENT_SERVICE_URL}/api/v1/documents/${id}`, {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({ filename, content }),
+      });
+
+      if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || "Errore aggiornamento documento");
       }
 
       await fetchDocuments();
@@ -359,7 +439,7 @@ export const ContextProvider = ({
     notifications, unreadCount, loadingNotifications,
     fetchNotifications, markAsRead, deleteNotification,
     fetchGruppi, fetchUsers,
-    documents, loadingDocuments, fetchDocuments, uploadDocument, deleteDocument,
+    documents, loadingDocuments, fetchDocuments, fetchDocumentById, downloadDocument, uploadDocument, updateDocument, deleteDocument,
     createGroup, deleteGroup, addMembersToGroup, removeMemberFromGroup
   }}>
       {children}

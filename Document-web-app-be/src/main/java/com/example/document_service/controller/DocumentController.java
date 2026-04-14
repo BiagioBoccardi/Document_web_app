@@ -1,17 +1,23 @@
 package com.example.document_service.controller;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.util.List;
+import java.io.OutputStream;
+
+import org.bson.types.ObjectId;
 
 import com.example.document_service.exception.PayloadTooLargeException;
 import com.example.document_service.exception.UnauthorizedException;
 import com.example.document_service.http.DocumentAuthMiddleware;
 import com.example.document_service.model.Document;
 import com.example.document_service.service.DocumentService;
+import com.mongodb.client.gridfs.GridFSBucket;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.UploadedFile;
+
 import net.sourceforge.tess4j.TesseractException;
 
 public class DocumentController {
@@ -32,6 +38,7 @@ public class DocumentController {
         app.post("/api/v1/documents", this::uploadDocument);
         app.get("/api/v1/documents", this::getUserDocuments);
         app.get("/api/v1/documents/{id}", this::getDocumentById);
+        app.get("/api/v1/documents/{id}/download", this::downloadDocument);
         app.put("/api/v1/documents/{id}", this::updateDocument);
         app.delete("/api/v1/documents/{id}", this::deleteDocument);
     }
@@ -68,6 +75,26 @@ public class DocumentController {
         String documentId = ctx.pathParam("id");
         Document document = documentService.getDocumentById(userId, documentId);
         ctx.status(200).json(document);
+    }
+
+    private void downloadDocument(Context ctx) {
+        long userId = extractUserId(ctx);
+        String documentId = ctx.pathParam("id");
+
+        Document document = documentService.getDocumentById(userId, documentId);
+
+        if (document.getGridFSId() == null) {
+            throw new IllegalStateException("File binario non presente");
+        }
+
+        GridFSBucket bucket = documentService.getRepository().getGridFSBucket();
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        bucket.downloadToStream(document.getGridFSId(), outputStream);
+
+        ctx.header("Content-Disposition", "attachment; filename=\"" + document.getFilename() + "\"");
+        ctx.contentType(document.getMetadata().getMimeType());
+        ctx.result(outputStream.toByteArray());
     }
 
     private void updateDocument(Context ctx) {

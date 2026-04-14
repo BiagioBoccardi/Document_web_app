@@ -3,14 +3,16 @@
     import { Card } from "@/components/ui/card";
     import { Button } from "@/components/ui/button";
     import { toast } from "sonner";
-    import { Upload, File, AlertCircle, LogIn, UserPlus, Loader2, Trash2 } from "lucide-react";
+    import { Upload, File, AlertCircle, LogIn, UserPlus, Loader2} from "lucide-react";
     import { useNavigate } from "react-router-dom";
+    import { useRef } from "react";
 
     const ALLOWED_EXTENSIONS = ["txt", "pdf", "doc", "docx", "xls", "xlsx"];
     const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 
     const Homepage = () => {
-        const { currentUser, documents, loadingDocuments, uploadDocument, deleteDocument } = useContextCast();
+        const fileInputRef = useRef<HTMLInputElement>(null);
+        const { currentUser, documents, loadingDocuments, uploadDocument, deleteDocument, downloadDocument } = useContextCast();
         const navigate = useNavigate();
         const [isDragOver, setIsDragOver] = useState(false);
         const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -159,13 +161,15 @@
                             <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                             <h3 className="text-lg font-medium text-gray-900 mb-2">Trascina i file qui</h3>
                             <p className="text-gray-600 mb-4">oppure</p>
-                            <label>
-                                <input type="file" multiple onChange={handleFileInput} className="hidden"
-                                    accept=".txt,.pdf,.doc,.docx,.xls,.xlsx" />
-                                <Button type="button" variant="outline" className="cursor-pointer">
-                                    Seleziona file
-                                </Button>
-                            </label>
+                           <input
+                                ref={fileInputRef} type="file" multiple
+                                onChange={handleFileInput} className="hidden"
+                                accept=".txt,.pdf,.doc,.docx,.xls,.xlsx"/>
+                            <Button
+                                type="button" variant="outline"
+                                onClick={() => fileInputRef.current?.click()}>
+                                Seleziona file
+                            </Button>
                             <p className="text-sm text-gray-500 mt-4">
                                 Supportati: TXT, PDF, DOC, DOCX, XLS, XLSX (Max 10MB)
                             </p>
@@ -208,6 +212,9 @@
                             <File className="w-6 h-6" />
                             I tuoi documenti
                         </h2>
+                        <div className="text-muted-foreground text-sm mb-4">
+                            Clicca su un documento per visualizzarlo
+                        </div>
                         {loadingDocuments ? (
                             <div className="flex items-center justify-center py-12">
                                 <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
@@ -220,19 +227,55 @@
                         ) : (
                             <div className="space-y-2">
                                 {documents.map((doc) => (
-                                    <div key={doc.id} className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                                    <div
+                                        key={doc.id}
+                                        className="flex items-center justify-between bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition"
+                                        onClick={() => navigate(`/documents/${doc.id}`)}>
                                         <div className="flex items-center gap-3">
                                             <File className="w-5 h-5 text-gray-500" />
                                             <div>
                                                 <p className="font-medium text-sm">{doc.filename}</p>
                                                 <p className="text-xs text-gray-500">
-                                                    {new Date(doc.uploadDate).toLocaleDateString("it-IT")} — {(doc.metadata.size / 1024).toFixed(2)} KB
+                                                    {new Date(doc.uploadDate).toLocaleDateString("it-IT")} —{" "}
+                                                    {(doc.metadata.size / 1024).toFixed(2)} KB
                                                 </p>
                                             </div>
                                         </div>
-                                        <button onClick={() => handleDelete(doc.id, doc.filename)} className="text-red-500 hover:text-red-700">
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    downloadDocument(doc.id, doc.filename);
+                                                }}>
+                                                Download
+                                            </Button>
+
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(`/documents/${doc.id}/edit`);
+                                                }}>
+                                                Modifica
+                                            </Button>
+
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDelete(doc.id, doc.filename);
+                                                }}
+                                            >
+                                                Elimina
+                                            </Button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

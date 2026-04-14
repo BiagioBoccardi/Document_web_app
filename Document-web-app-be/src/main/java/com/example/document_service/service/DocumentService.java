@@ -164,6 +164,13 @@ public class DocumentService {
         return documentRepository.deleteAllByUserId(userId);
     }
 
+    public GridFSBucket getGridFSBucket() {
+        return documentRepository.getGridFSBucket();
+    }
+
+    public DocumentRepository getRepository() {
+        return documentRepository;
+    }
     // --- Helper ---
     private void validateUserId(long userId) { if (userId <= 0) throw new IllegalArgumentException("userId non valido"); }
     private void validateFilename(String filename) {
