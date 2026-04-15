@@ -1,97 +1,80 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useContextCast } from "@/context/context";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, FileText, ArrowLeft, Edit } from "lucide-react";
+import { useContextCast } from "@/context/context";
+import { ArrowLeft } from "lucide-react";
 
-const DocumentDetailPage = () => {
-    const { id } = useParams();
-    const navigate = useNavigate();
-    const { fetchDocumentById, downloadDocument } = useContextCast();
+interface DocumentDetail {
+  id: string;
+  filename: string;
+  uploadDate: string;
+  content: string;
+}
 
-    const [doc, setDoc] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+export default function DocumentPreviewPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { fetchDocumentById, downloadDocument } = useContextCast();
 
-    useEffect(() => {
-        const load = async () => {
-            if (!id) return;
+  const [url, setUrl] = useState<string | null>(null);
+  const [doc, setDoc] = useState<DocumentDetail | null>(null);
 
-            try {
-                const data = await fetchDocumentById(id);
-                setDoc(data);
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setLoading(false);
-            }
-        };
+  const isPreviewable = (filename: string) => {
+    return filename.endsWith(".pdf") || filename.endsWith(".txt");
+  };
 
-        load();
-    }, [id]);
+  useEffect(() => {
+    const load = async () => {
+      if (!id) return;
+      try {
+        const data = await fetchDocumentById(id);
+        setDoc(data as DocumentDetail);
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center min-h-screen">
-                <Loader2 className="w-8 h-8 animate-spin" />
-            </div>
+        if (!isPreviewable((data as DocumentDetail).filename)) return;
+
+        const token = localStorage.getItem("token");
+        const res = await fetch(
+          `http://localhost:8082/api/v1/documents/${id}/download`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-    }
+        const blob = await res.blob();
+        setUrl(URL.createObjectURL(blob));
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    load();
+  }, [id, fetchDocumentById]);
 
-    if (!doc) {
-        return (
-            <div className="text-center mt-20">
-                Documento non trovato
-            </div>
-        );
-    }
+  if (!doc) return <p>Caricamento...</p>;
 
+  if (!isPreviewable(doc.filename)) {
     return (
-        <div className="max-w-4xl mx-auto p-8">
-            <Button variant="outline" onClick={() => navigate(-1)}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Indietro
-            </Button>
-
-            <Card className="mt-6 p-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h1 className="text-2xl font-bold flex items-center gap-2">
-                        <FileText /> {doc.filename}
-                    </h1>
-
-                    <div className="flex gap-2">
-                        {/* PREVIEW */}
-                        <Button onClick={() => navigate(`/documents/${id}/preview`)}>
-                            Preview
-                        </Button>
-
-                        {/* DOWNLOAD (solo se il file esiste) */}
-                        <Button onClick={() => {
-                                if (!doc?.filename || !id) return;
-                                downloadDocument(id, doc.filename);
-                            }}>
-                            Download
-                        </Button>
-
-                        {/* EDIT */}
-                        <Button onClick={() => navigate(`/documents/${id}/edit`)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Modifica
-                        </Button>
-
-                    </div>
-                </div>
-
-                <p className="text-gray-500 text-sm mb-4">
-                    Upload: {new Date(doc.uploadDate).toLocaleString("it-IT")}
-                </p>
-
-                <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap">
-                    {doc.content}
-                </div>
-            </Card>
-        </div>
+      <div className="p-8">
+        <p className="mb-4">Preview non disponibile per questo tipo di file</p>
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          <ArrowLeft className="w-4 h-4 mr-2" />Indietro
+        </Button>
+        <Button onClick={() => downloadDocument(id!, doc.filename)}>
+          Scarica file
+        </Button>
+      </div>
     );
-};
+  }
 
-export default DocumentDetailPage;
+  if (!url) return <p>Caricamento preview...</p>;
+
+  return (
+    <div className="w-full h-screen flex flex-col">
+      <div className="p-2 border-b flex gap-2">
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          <ArrowLeft className="w-4 h-4 mr-2" />Indietro
+        </Button>
+        <Button onClick={() => downloadDocument(id!, doc.filename)}>
+          Scarica file
+        </Button>
+      </div>
+      <iframe src={url} className="flex-1 w-full" />
+    </div>
+  );
+}

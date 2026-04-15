@@ -93,16 +93,16 @@ export default function SearchPage() {
       const data = await response.json();
       setResults(data.results ?? []);
       setIsLoading(false);
-    } catch (err: any) {
-      if (err.name === "AbortError") {
-        console.log("Richiesta di ricerca precedente annullata.");
-        return;
-      }
+    } catch (err: unknown) {
+  if (err instanceof Error && err.name === "AbortError") {
+    console.log("Richiesta di ricerca precedente annullata.");
+    return;
+  }
 
-      setError(err.message || "Si è verificato un errore imprevisto.");
-      setResults([]);
-      setIsLoading(false);
-    }
+  setError(err instanceof Error ? err.message : "Si è verificato un errore imprevisto.");
+  setResults([]);
+  setIsLoading(false);
+}
   };
 
   return (

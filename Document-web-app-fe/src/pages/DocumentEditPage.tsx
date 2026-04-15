@@ -21,30 +21,28 @@ const DocumentEditPage = () => {
     useEffect(() => {
         const load = async () => {
             if (!id) return;
-
             try {
                 const data = await fetchDocumentById(id);
-                setFilename(data.filename);
-                setContent(data.content);
-            } catch (e) {
+                const doc = data as { filename: string; content: string };
+                setFilename(doc.filename);
+                setContent(doc.content);
+            } catch {
                 toast.error("Errore caricamento documento");
             } finally {
                 setLoading(false);
             }
         };
-
         load();
-    }, [id]);
+    }, [id, fetchDocumentById]);
 
     const handleSave = async () => {
         if (!id) return;
-
         setSaving(true);
         try {
             await updateDocument(id, filename, content);
             toast.success("Documento aggiornato");
             navigate(`/documents/${id}`);
-        } catch (e) {
+        } catch {
             toast.error("Errore durante salvataggio");
         } finally {
             setSaving(false);
@@ -63,25 +61,21 @@ const DocumentEditPage = () => {
         <div className="max-w-4xl mx-auto p-8">
             <Card className="p-6 space-y-4">
                 <h1 className="text-2xl font-bold">Modifica Documento</h1>
-
                 <Input
                     value={filename}
                     onChange={(e) => setFilename(e.target.value)}
                     placeholder="Nome file"
                 />
-
                 <Textarea
                     value={content}
                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
                     rows={15}
                     placeholder="Contenuto documento..."
                 />
-
                 <div className="flex gap-4">
                     <Button onClick={handleSave} disabled={saving}>
                         {saving ? "Salvataggio..." : "Salva"}
                     </Button>
-
                     <Button variant="outline" onClick={() => navigate(-1)}>
                         Annulla
                     </Button>

@@ -32,7 +32,7 @@ interface ContextType {
   documents: IDocument[];
   loadingDocuments: boolean;
   fetchDocuments: () => Promise<void>;
-  fetchDocumentById: (id: string) => Promise<any>;
+  fetchDocumentById: (id: string) => Promise<unknown>;
   downloadDocument: (id: string, filename: string) => Promise<void>;
   uploadDocument: (file: File) => Promise<void>;
   updateDocument: (id: string, filename: string, content: string) => Promise<void>;
@@ -446,7 +446,7 @@ export const ContextProvider = ({
     </Context.Provider>
   );
 };
-
+// eslint-disable-next-line react-refresh/only-export-components
 export const useContextCast = () => {
   const context = useContext(Context);
   if (context === undefined) {
