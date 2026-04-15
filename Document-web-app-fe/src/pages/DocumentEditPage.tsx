@@ -26,7 +26,7 @@ const DocumentEditPage = () => {
                 const doc = data as { filename: string; content: string };
                 setFilename(doc.filename);
                 setContent(doc.content);
-            } catch (_e) {
+            } catch {
                 toast.error("Errore caricamento documento");
             } finally {
                 setLoading(false);
@@ -42,7 +42,7 @@ const DocumentEditPage = () => {
             await updateDocument(id, filename, content);
             toast.success("Documento aggiornato");
             navigate(`/documents/${id}`);
-        } catch (_e) {
+        } catch {
             toast.error("Errore durante salvataggio");
         } finally {
             setSaving(false);
