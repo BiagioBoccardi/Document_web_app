@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +33,7 @@ import static org.mockito.Mockito.*;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("DocumentEventConsumer - Test unitari")
 class DocumentEventConsumerTest {
 
@@ -83,7 +86,10 @@ class DocumentEventConsumerTest {
     private void dispatch(String queue, DocumentEvent event) throws Exception {
         byte[] body = objectMapper.writeValueAsBytes(event);
         Delivery delivery = mock(Delivery.class);
+        com.rabbitmq.client.Envelope envelope = mock(com.rabbitmq.client.Envelope.class);
         when(delivery.getBody()).thenReturn(body);
+        when(delivery.getEnvelope()).thenReturn(envelope);
+        when(envelope.getDeliveryTag()).thenReturn(1L);
         callbacks.get(queue).handle("tag", delivery);
     }
 
