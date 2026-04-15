@@ -3,9 +3,23 @@ import { Search, Loader2, FileText, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import SearchResultCard, { type SearchResult } from "@/search_service/SearchResultCard";
-import SearchResultSkeleton from "@/search_service/SearchResultSkeleton";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import SearchResultCard, {
+  type SearchResult,
+} from "@/components/SearchResultCard";
+import SearchResultSkeleton from "@/components/SearchResultSkeleton";
+import SimilarDocumentsSheet from "@/search_service/SimilarDocumentsSheet";
+
+interface SimilarTarget {
+  documentId: string;
+  filename?: string;
+}
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
@@ -16,6 +30,10 @@ export default function SearchPage() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [lastQuery, setLastQuery] = useState("");
+
+  const [similarTarget, setSimilarTarget] = useState<SimilarTarget | null>(
+    null,
+  );
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -66,11 +84,14 @@ export default function SearchPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Errore durante la comunicazione con il server di ricerca.");
+        const body = await response.text();
+        throw new Error(
+          `Errore ${response.status}: ${body || response.statusText}`,
+        );
       }
 
       const data = await response.json();
-      setResults(data);
+      setResults(data.results ?? []);
       setIsLoading(false);
     } catch (err: any) {
       if (err.name === "AbortError") {
@@ -87,10 +108,12 @@ export default function SearchPage() {
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl flex flex-col gap-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Ricerca Semantica</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">
+          Ricerca Semantica
+        </h1>
         <p className="text-muted-foreground">
-          Cerca concetti, argomenti o paragrafi all'interno dei tuoi documenti analizzandone il
-          significato.
+          Cerca concetti, argomenti o paragrafi all'interno dei tuoi documenti
+          analizzandone il significato.
         </p>
       </div>
 
@@ -149,7 +172,9 @@ export default function SearchPage() {
             </div>
 
             {error && (
-              <p className="text-sm font-medium text-destructive mt-1">{error}</p>
+              <p className="text-sm font-medium text-destructive mt-1">
+                {error}
+              </p>
             )}
           </form>
         </CardContent>
@@ -174,7 +199,20 @@ export default function SearchPage() {
             <SearchResultSkeleton count={topK > 3 ? 3 : topK} />
           ) : results.length > 0 ? (
             results.map((res, index) => (
-              <SearchResultCard key={res.id ?? res.documentId ?? index} result={res} rank={index + 1} />
+              <SearchResultCard
+                key={res.id ?? res.documentId ?? index}
+                result={res}
+                rank={index + 1}
+                onSimilarClick={
+                  res.documentId
+                    ? () =>
+                        setSimilarTarget({
+                          documentId: res.documentId!,
+                          filename: res.filename,
+                        })
+                    : undefined
+                }
+              />
             ))
           ) : (
             <div className="p-10 text-center text-muted-foreground border border-dashed rounded-lg flex flex-col items-center gap-3">
@@ -182,7 +220,8 @@ export default function SearchPage() {
               <div>
                 <p className="font-medium">Nessun documento trovato</p>
                 <p className="text-sm mt-1">
-                  Nessun risultato per <span className="italic">"{lastQuery}"</span>. Prova con
+                  Nessun risultato per{" "}
+                  <span className="italic">"{lastQuery}"</span>. Prova con
                   parole diverse o concetti più ampi.
                 </p>
               </div>
@@ -190,6 +229,13 @@ export default function SearchPage() {
           )}
         </div>
       )}
+
+      <SimilarDocumentsSheet
+        open={!!similarTarget}
+        onClose={() => setSimilarTarget(null)}
+        documentId={similarTarget?.documentId ?? ""}
+        filename={similarTarget?.filename}
+      />
     </div>
   );
 }

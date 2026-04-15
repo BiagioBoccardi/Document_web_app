@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { FileText, ChevronDown, ChevronUp } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { FileText, ChevronDown, ChevronUp, Layers } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -8,13 +8,14 @@ export interface SearchResult {
   id?: string;
   documentId?: string;
   filename?: string;
-  content: string;
+  snippet: string;
   score: number;
 }
 
 interface SearchResultCardProps {
   result: SearchResult;
   rank: number;
+  onSimilarClick?: () => void;
 }
 
 const SNIPPET_LIMIT = 280;
@@ -37,13 +38,15 @@ function getScoreBarClass(score: number): string {
   return "bg-red-500";
 }
 
-export default function SearchResultCard({ result, rank }: SearchResultCardProps) {
+export default function SearchResultCard({ result, rank, onSimilarClick }: SearchResultCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const scorePct = normalizeScore(result.score);
-  const isLong = result.content.length > SNIPPET_LIMIT;
+  const isLong = result.snippet.length > SNIPPET_LIMIT;
   const displayedContent =
-    isLong && !expanded ? result.content.slice(0, SNIPPET_LIMIT) + "…" : result.content;
+    isLong && !expanded ? result.snippet.slice(0, SNIPPET_LIMIT) + "…" : result.snippet;
+
+  const showSimilarButton = !!onSimilarClick && !!result.documentId;
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow gap-0">
@@ -110,6 +113,20 @@ export default function SearchResultCard({ result, rank }: SearchResultCardProps
           </Button>
         )}
       </CardContent>
+
+      {showSimilarButton && (
+        <CardFooter className="px-4 py-2 border-t bg-muted/10">
+          <Button
+            variant="ghost"
+            size="xs"
+            className="text-xs text-muted-foreground hover:text-foreground"
+            onClick={onSimilarClick}
+          >
+            <Layers className="w-3 h-3" />
+            Documenti simili
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }

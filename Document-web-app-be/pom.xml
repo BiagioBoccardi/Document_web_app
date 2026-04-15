@@ -16,7 +16,7 @@
         <mockito.version>5.11.0</mockito.version>
         <lombok.version>1.18.42</lombok.version>
         <jackson.version>2.14.2</jackson.version>
-        <grpc.version>1.59.0</grpc.version>
+        <grpc.version>1.68.1</grpc.version>
     </properties>
 
     <dependencies>
@@ -40,7 +40,7 @@
             <version>5.11.0</version>
         </dependency>
         <dependency>
-        <groupId>org.apache.poi</groupId>
+            <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
             <version>5.2.5</version>
         </dependency>
@@ -49,19 +49,17 @@
             <artifactId>poi-ooxml</artifactId>
             <version>5.2.5</version>
         </dependency>
-        <!-- Aggiungi poi-scratchpad per HWPFDocument (file .doc) -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-scratchpad</artifactId>
             <version>5.2.5</version>
         </dependency>
-        <!-- Aggiungi PDFBox per PDF -->
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
             <version>3.0.1</version>
         </dependency>
-        
+
         <!-- ===== DATABASE ===== -->
         <dependency>
             <groupId>org.hibernate</groupId>
@@ -143,6 +141,11 @@
             <version>${grpc.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-services</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
             <version>3.24.0</version>
@@ -205,9 +208,6 @@
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
-
-        <!-- Source: https://mvnrepository.com/artifact/com.rabbitmq/amqp-client -->
-        
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
@@ -217,7 +217,7 @@
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin-testtools</artifactId>
-            <version>5.6.0</version> 
+            <version>5.6.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -283,6 +283,7 @@
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.example.App</mainClass>
                                 </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
                             <filters>
                                 <filter>
