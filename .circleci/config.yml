@@ -33,11 +33,18 @@ jobs:
           working_directory: ./Document-web-app-be
           command: mvn clean verify
 
+      - run:
+          name: Collect Test Results
+          command: |
+            mkdir -p ~/test-results
+            find ~/project/Document-web-app-be -name "TEST-*.xml" -exec cp {} ~/test-results/ \;
+          when: always
+
       - store_test_results:
-          path: Document-web-app-be/target/surefire-reports
+          path: ~/test-results
 
       - store_artifacts:
-          path: Document-web-app-be/target/surefire-reports
+          path: ~/test-results
           destination: test-results
 
       - save_cache:
