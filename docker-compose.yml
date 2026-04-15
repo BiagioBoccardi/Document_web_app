@@ -96,11 +96,16 @@ services:
     container_name: search_service
     environment:
       SERVICE_TYPE: "SEARCH_SERVICE"
-      QDRANT_URL: "http://qdrant:6333" # URL per connettersi al Vector DB
+      QDRANT_HOST: "qdrant"
+      QDRANT_PORT: "6334"
+      RABBITMQ_HOST: "rabbitmq"
+      JAVA_OPTS: "-Dio.grpc.netty.shaded.io.netty.transport.noNative=true"
+      JWT_SECRET: "una_chiave_segreta_molto_sicura_e_lunga_almeno_32_caratteri"
     ports:
       - "8083:8080"
     depends_on:
       - qdrant
+      - rabbitmq
 
   notification-service:
     build: 
