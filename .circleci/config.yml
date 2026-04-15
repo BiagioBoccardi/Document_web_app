@@ -29,9 +29,16 @@ jobs:
             echo "token123"    > secrets/influxdb2-admin-token
 
       - run:
-          name: Build JAR with Maven
+          name: Run Tests
           working_directory: ./Document-web-app-be
-          command: mvn clean package -DskipTests
+          command: mvn clean verify
+
+      - store_test_results:
+          path: Document-web-app-be/target/surefire-reports
+
+      - store_artifacts:
+          path: Document-web-app-be/target/surefire-reports
+          destination: test-results
 
       - save_cache:
           paths:
