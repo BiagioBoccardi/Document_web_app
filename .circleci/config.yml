@@ -1,0 +1,109 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.2.0
+
+jobs:
+  # Job 1: Compilazione e Build Docker Backend
+  backend-ci:
+    docker:
+      - image: cimg/openjdk:21.0
+    steps:
+      - checkout
+
+      - setup_remote_docker:
+          version: default
+
+      - restore_cache:
+          keys:
+            - maven-deps-{{ checksum "Document-web-app-be/pom.xml" }}
+            - maven-deps-
+
+      # Creazione cartella secrets e file dummy per evitare errori nel build Docker
+      - run:
+          name: Setup Dummy Secrets for Build
+          command: |
+            mkdir -p secrets
+            echo "admin"       > secrets/influxdb2-admin-username
+            echo "password123" > secrets/influxdb2-admin-password
+            echo "token123"    > secrets/influxdb2-admin-token
+
+      - run:
+          name: Build JAR with Maven
+          working_directory: ./Document-web-app-be
+          command: mvn clean package -DskipTests
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: maven-deps-{{ checksum "Document-web-app-be/pom.xml" }}
+
+      - run:
+          name: Build Docker Images (Verify Dockerfiles)
+          command: |
+            docker build -t user-service:latest     -f ./Document-web-app-be/Dockerfile ./Document-web-app-be
+            docker build -t document-service:latest -f ./Document-web-app-be/Dockerfile ./Document-web-app-be
+
+  # Job 2: Build del Frontend
+  frontend-ci:
+    docker:
+      - image: cimg/node:20.0
+    steps:
+      - checkout
+
+      - setup_remote_docker:
+          version: default
+
+      - restore_cache:
+          keys:
+            - npm-deps-{{ checksum "Document-web-app-fe/package-lock.json" }}
+            - npm-deps-
+
+      - run:
+          name: Install dependencies
+          working_directory: ./Document-web-app-fe
+          command: npm install
+
+      - save_cache:
+          paths:
+            - ./Document-web-app-fe/node_modules
+          key: npm-deps-{{ checksum "Document-web-app-fe/package-lock.json" }}
+
+      - run:
+          name: Lint
+          working_directory: ./Document-web-app-fe
+          command: npm run lint
+
+      - run:
+          name: Build Frontend
+          working_directory: ./Document-web-app-fe
+          command: npm run build
+
+      - run:
+          name: Build Frontend Docker Image
+          working_directory: ./Document-web-app-fe
+          command: docker build -t document-frontend:latest .
+
+workflows:
+  ci-pipeline:
+    jobs:
+      - backend-ci:
+          filters:
+            branches:
+              only:
+                - main
+                - circleci-project-setup
+                - Notification_service
+                - Search_service
+                - Document_Service
+                - User_Service
+      - frontend-ci:
+          filters:
+            branches:
+              only:
+                - main
+                - circleci-project-setup
+                - Notification_service
+                - Search_service
+                - Document_Service
+                - User_Service
