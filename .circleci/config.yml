@@ -102,6 +102,7 @@ workflows:
             branches:
               only:
                 - main
+                - circleci-project-setup
                 - Notification_service
                 - Search_service
                 - Document_Service
