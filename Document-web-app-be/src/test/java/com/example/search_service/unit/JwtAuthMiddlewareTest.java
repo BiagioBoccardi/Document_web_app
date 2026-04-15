@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Date;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -62,29 +63,27 @@ class JwtAuthMiddlewareTest {
         }
 
         @Test
-        @DisplayName("KO: header Authorization assente — risponde 401, userId non impostato")
+        @DisplayName("KO: header Authorization assente — lancia UnauthorizedResponse, userId non impostato")
         void shouldReturn401WhenAuthHeaderMissing() {
             when(ctx.header("Authorization")).thenReturn(null);
 
-            JwtAuthMiddleware.handle(ctx);
-
-            verify(ctx).status(HttpStatus.UNAUTHORIZED);
+            assertThrows(io.javalin.http.UnauthorizedResponse.class,
+                    () -> JwtAuthMiddleware.handle(ctx));
             verify(ctx, never()).attribute(eq("userId"), any());
         }
 
         @Test
-        @DisplayName("KO: header non inizia con 'Bearer ' — risponde 401")
+        @DisplayName("KO: header non inizia con 'Bearer ' — lancia UnauthorizedResponse")
         void shouldReturn401WhenHeaderIsNotBearer() {
             when(ctx.header("Authorization")).thenReturn("Basic dXNlcjpwYXNz");
 
-            JwtAuthMiddleware.handle(ctx);
-
-            verify(ctx).status(HttpStatus.UNAUTHORIZED);
+            assertThrows(io.javalin.http.UnauthorizedResponse.class,
+                    () -> JwtAuthMiddleware.handle(ctx));
             verify(ctx, never()).attribute(eq("userId"), any());
         }
 
         @Test
-        @DisplayName("KO: token con firma non valida — risponde 401")
+        @DisplayName("KO: token con firma non valida — lancia UnauthorizedResponse")
         void shouldReturn401WhenSignatureIsInvalid() {
             String fakeToken = JWT.create()
                     .withSubject(TEST_USER_ID)
@@ -92,14 +91,13 @@ class JwtAuthMiddlewareTest {
 
             when(ctx.header("Authorization")).thenReturn("Bearer " + fakeToken);
 
-            JwtAuthMiddleware.handle(ctx);
-
-            verify(ctx).status(HttpStatus.UNAUTHORIZED);
+            assertThrows(io.javalin.http.UnauthorizedResponse.class,
+                    () -> JwtAuthMiddleware.handle(ctx));
             verify(ctx, never()).attribute(eq("userId"), any());
         }
 
         @Test
-        @DisplayName("KO: token scaduto — risponde 401")
+        @DisplayName("KO: token scaduto — lancia UnauthorizedResponse")
         void shouldReturn401WhenTokenExpired() {
             String expiredToken = JWT.create()
                     .withSubject(TEST_USER_ID)
@@ -108,14 +106,13 @@ class JwtAuthMiddlewareTest {
 
             when(ctx.header("Authorization")).thenReturn("Bearer " + expiredToken);
 
-            JwtAuthMiddleware.handle(ctx);
-
-            verify(ctx).status(HttpStatus.UNAUTHORIZED);
+            assertThrows(io.javalin.http.UnauthorizedResponse.class,
+                    () -> JwtAuthMiddleware.handle(ctx));
             verify(ctx, never()).attribute(eq("userId"), any());
         }
 
         @Test
-        @DisplayName("KO: token senza claim 'sub' — risponde 401")
+        @DisplayName("KO: token senza claim 'sub' — lancia UnauthorizedResponse")
         void shouldReturn401WhenSubClaimMissing() {
             String tokenWithoutSub = JWT.create()
                     .withClaim("email", "utente@example.com")
@@ -124,9 +121,8 @@ class JwtAuthMiddlewareTest {
 
             when(ctx.header("Authorization")).thenReturn("Bearer " + tokenWithoutSub);
 
-            JwtAuthMiddleware.handle(ctx);
-
-            verify(ctx).status(HttpStatus.UNAUTHORIZED);
+            assertThrows(io.javalin.http.UnauthorizedResponse.class,
+                    () -> JwtAuthMiddleware.handle(ctx));
             verify(ctx, never()).attribute(eq("userId"), any());
         }
     }
