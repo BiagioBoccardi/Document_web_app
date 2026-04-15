@@ -52,9 +52,9 @@ export default function SimilarDocumentsSheet({
 
         const data = await response.json();
         setResults(data.results ?? []);
-      } catch (err: any) {
-        if (err.name === "AbortError") return;
-        setError(err.message || "Si è verificato un errore imprevisto.");
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === "AbortError") return;
+        setError(err instanceof Error ? err.message : "Si è verificato un errore imprevisto.");
       } finally {
         setIsLoading(false);
       }

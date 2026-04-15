@@ -4,13 +4,17 @@ import { Button } from "@/components/ui/button";
 import { useContextCast } from "@/context/context";
 import { ArrowLeft } from "lucide-react";
 
+interface DocumentData {
+  filename: string;
+}
+
 export default function DocumentPreviewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { fetchDocumentById, downloadDocument } = useContextCast();
 
   const [url, setUrl] = useState<string | null>(null);
-  const [doc, setDoc] = useState<any>(null);
+  const [doc, setDoc] = useState<DocumentData | null>(null);
 
   const isPreviewable = (filename: string) => {
     return filename.endsWith(".pdf") || filename.endsWith(".txt");
@@ -21,8 +25,8 @@ export default function DocumentPreviewPage() {
       if (!id) return;
 
       try {
-        const data = await fetchDocumentById(id);
-        setDoc(data); 
+        const data = await fetchDocumentById(id) as DocumentData;
+        setDoc(data);
 
         if (!isPreviewable(data.filename)) return;
 
@@ -47,7 +51,7 @@ export default function DocumentPreviewPage() {
     };
 
     load();
-  }, [id]);
+  }, [id, fetchDocumentById]);
 
   // caso: documento non caricato
   if (!doc) return <p>Caricamento...</p>;
