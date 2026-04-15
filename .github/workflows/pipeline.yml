@@ -35,10 +35,17 @@ jobs:
           echo "password123" > secrets/influxdb2-admin-password
           echo "token123" > secrets/influxdb2-admin-token
 
-      - name: Build JAR with Maven
+      - name: Run Tests
         working-directory: ./Document-web-app-be
-        # Saltiamo i test qui se richiedono i DB reali accesi, altrimenti il build fallisce
-        run: mvn clean package -DskipTests
+        run: mvn clean verify
+
+      - name: Publish Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: Document-web-app-be/target/surefire-reports/*.xml
+          retention-days: 7
 
       - name: Build Docker Images (Verify Dockerfiles)
         working-directory: .
